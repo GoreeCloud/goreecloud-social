@@ -26,6 +26,35 @@ class SocialProfile(models.Model):
         return f"@{self.handle}"
 
 
+class ProfileCollection(models.Model):
+    class Kind(models.TextChoices):
+        LIST = "list", "List"
+        CIRCLE = "circle", "Circle"
+
+    owner = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="profile_collections")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    name = models.CharField(max_length=120)
+    description = models.CharField(max_length=500, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("owner", "kind", "name"), name="social_unique_profile_collection_name")
+        ]
+
+
+class ProfileCollectionMember(models.Model):
+    collection = models.ForeignKey(ProfileCollection, on_delete=models.CASCADE, related_name="members")
+    profile = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="collection_memberships")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("collection", "profile"), name="social_unique_profile_collection_member")
+        ]
+
+
 class Space(models.Model):
     class Kind(models.TextChoices):
         GROUP = "group", "Group"
@@ -68,6 +97,80 @@ class SpaceMembership(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("space", "profile"), name="social_unique_space_membership")]
+
+
+class SpaceRule(models.Model):
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name="rules")
+    title = models.CharField(max_length=160)
+    description = models.CharField(max_length=1000, blank=True)
+    position = models.PositiveSmallIntegerField()
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("position", "id")
+        constraints = [models.UniqueConstraint(fields=("space", "position"), name="social_unique_space_rule_position")]
+
+
+class SpaceInvitation(models.Model):
+    class State(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name="invitations")
+    inviter = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="space_invitations_sent")
+    invitee = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="space_invitations_received")
+    state = models.CharField(max_length=16, choices=State.choices, default=State.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.space_id is not None and self.invitee_id is not None:
+            if SpaceMembership.objects.filter(
+                space_id=self.space_id,
+                profile_id=self.invitee_id,
+                state=SpaceMembership.State.ACCEPTED,
+            ).exists():
+                raise ValidationError({"invitee": "An accepted space member does not need an invitation."})
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("space", "invitee"), name="social_unique_space_invitation"),
+            models.CheckConstraint(condition=~models.Q(inviter=models.F("invitee")), name="social_invitation_no_self"),
+        ]
+
+
+class SpaceJoinRequest(models.Model):
+    class State(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        DECLINED = "declined", "Declined"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name="join_requests")
+    requester = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="space_join_requests")
+    state = models.CharField(max_length=16, choices=State.choices, default=State.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.space_id is not None and self.requester_id is not None:
+            if SpaceMembership.objects.filter(
+                space_id=self.space_id,
+                profile_id=self.requester_id,
+                state=SpaceMembership.State.ACCEPTED,
+            ).exists():
+                raise ValidationError({"requester": "An accepted space member does not need a join request."})
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("space", "requester"), name="social_unique_space_join_request")]
 
 
 class Follow(models.Model):

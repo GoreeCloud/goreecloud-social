@@ -21,8 +21,13 @@ def home(request):
         "feed_modes": ["Following", "Chronological", "Discover", "Communities", "Video"],
         "social_primitives": [
             "Profiles",
+            "Lists",
+            "Circles",
             "Groups",
             "Communities",
+            "Space invitations",
+            "Join requests",
+            "Space rules",
             "Posts",
             "Replies",
             "Photos",
@@ -70,6 +75,7 @@ def service_status(request):
             "relationship-safety-read-enforcement",
             "following-and-chronological-feed-read-models",
             "threaded-replies-bookmarks-and-polls-domain",
+            "social-collections-and-community-workflow-domain",
         ],
         "platform_integrations": PLATFORM_INTEGRATIONS,
     })
