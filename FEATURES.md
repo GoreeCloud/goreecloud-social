@@ -7,8 +7,10 @@
 - Membership roles and states.
 - Directional follow relationships with a no-self-follow database constraint.
 - Bilateral block relationships and viewer-selected mute relationships with uniqueness and no-self-target constraints.
-- Posts with typed content, audiences, reply policy, moderation state, and optional space scope.
+- Posts with typed content, audiences, reply policy, moderation state, optional space scope, and an explicit parent-reply relationship.
 - Ordered media references for photos, video, and GIF content.
+- Single-choice poll records, ordered poll options, and one-vote-per-profile poll-vote groundwork.
+- Private bookmark relationships with one bookmark per profile/post.
 - Reactions, reposts/quote text, and post-report primitives.
 - Audience-aware read visibility for public, followers, mutual relationships, spaces, and private-to-self content.
 - Ordinary read visibility that excludes authors blocked by the viewer, authors who have blocked the viewer, and authors muted by the viewer.
@@ -19,7 +21,9 @@
 
 ## Planned product capabilities
 
-- Authenticated publishing, editing, replies, deletion, bookmarks, mentions, hashtags, polls, and sharing.
+- Authenticated publishing, editing, reply creation, deletion, bookmark mutation, mentions, hashtags, poll creation/voting, and sharing APIs.
+- Richer thread traversal and reply-policy enforcement tied to accepted Identity authorization and abuse controls.
+- Poll lifecycle/results policy, minimum-option validation at creation time, and any later multiple-choice mode through an explicit compatible extension.
 - Photo galleries, albums, short-form video, full video, captions, subtitles, thumbnails, and transcoding.
 - Public feed APIs and client surfaces for Following and Chronological, plus Discover/For You, Communities, Groups, Video, media, and optional Trending experiences.
 - Recommendation transparency, topic/signal controls, reset controls, and less-personalized feed options.
