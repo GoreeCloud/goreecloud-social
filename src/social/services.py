@@ -44,3 +44,39 @@ def visible_posts_for(profile: SocialProfile | None) -> QuerySet[Post]:
         .select_related("author", "space")
         .distinct()
     )
+
+
+def chronological_feed_for(profile: SocialProfile | None) -> QuerySet[Post]:
+    """Return the viewer's eligible Social timeline in reverse chronological order.
+
+    This Development read model intentionally adds no recommendation ranking.
+    Eligibility remains delegated to the authoritative visibility boundary.
+    """
+
+    return visible_posts_for(profile).order_by("-created_at", "-id")
+
+
+def following_feed_for(profile: SocialProfile | None) -> QuerySet[Post]:
+    """Return eligible posts from the viewer, accepted follows, and joined spaces.
+
+    The feed composes on top of ``visible_posts_for`` so audience, moderation,
+    bilateral block, and viewer-selected mute decisions stay centralized. An
+    anonymous caller has no personalized Following feed.
+    """
+
+    if profile is None:
+        return Post.objects.none()
+
+    following_ids = Follow.objects.filter(follower=profile, state=Follow.State.ACCEPTED).values_list(
+        "followed_id", flat=True
+    )
+    space_ids = SpaceMembership.objects.filter(profile=profile, state=SpaceMembership.State.ACCEPTED).values_list(
+        "space_id", flat=True
+    )
+
+    return (
+        visible_posts_for(profile)
+        .filter(Q(author=profile) | Q(author_id__in=following_ids) | Q(space_id__in=space_ids))
+        .order_by("-created_at", "-id")
+        .distinct()
+    )
