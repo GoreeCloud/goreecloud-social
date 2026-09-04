@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from social.models import Follow, Post, SocialProfile, Space, SpaceMembership
+from social.models import Block, Follow, Mute, Post, SocialProfile, Space, SpaceMembership
 from social.services import visible_posts_for
 
 
@@ -33,3 +33,29 @@ class VisibilityTests(TestCase):
     def test_anonymous_visibility_is_public_only(self):
         ids = set(visible_posts_for(None).values_list("id", flat=True))
         self.assertEqual(ids, {self.public.id})
+
+    def test_viewer_block_hides_blocked_author(self):
+        Block.objects.create(blocker=self.viewer, blocked=self.other)
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.public.id, ids)
+
+    def test_inbound_block_hides_blocking_author(self):
+        Block.objects.create(blocker=self.followed, blocked=self.viewer)
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.followers.id, ids)
+
+    def test_viewer_mute_hides_muted_author(self):
+        Mute.objects.create(muter=self.viewer, muted=self.mutual)
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.friends.id, ids)
+
+    def test_blocked_space_author_is_hidden_even_when_viewer_is_member(self):
+        Block.objects.create(blocker=self.viewer, blocked=self.space_author)
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.space_post.id, ids)
+
+    def test_safety_filters_do_not_hide_viewers_own_private_posts(self):
+        Block.objects.create(blocker=self.viewer, blocked=self.other)
+        Mute.objects.create(muter=self.viewer, muted=self.mutual)
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertIn(self.own_private.id, ids)
