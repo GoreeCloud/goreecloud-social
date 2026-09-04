@@ -6,7 +6,7 @@ GoreeCloud Social is the in-development, first-party GoreeCloud social platform 
 
 **Development source — not Stable, not production-ready, and not yet a public social service.**
 
-The initial native foundation establishes:
+The native Development foundation establishes:
 
 - a Django 5.2 development server and read-only source-status interface;
 - liveness, database-aware readiness, and bounded product-status endpoints;
@@ -15,10 +15,13 @@ The initial native foundation establishes:
 - follow relationships, block and mute relationships, posts, media references, reactions, reposts, and report records;
 - audience-aware post visibility for public, followers, mutual relationships, spaces, and private-to-self content;
 - ordinary read visibility that enforces bilateral blocks and viewer-selected mutes;
+- internal Following and Chronological feed read models that reuse the same visibility and relationship-safety boundary;
 - a responsive Glaze-oriented development shell for Home, Discover, Video, Communities, and Profile surfaces without claiming Glaze UI acceptance;
 - repository documentation, tests, CI, and a Platform Contract v0.2 declaration that truthfully records unfinished platform integrations.
 
-This source does **not** yet provide production authentication, public write APIs, media upload/transcoding, recommendation ranking, notifications, live streaming, production moderation operations, production storage, mobile applications, production deployment, or accepted integrations with GoreeCloud Identity, Privacy Shield, Wardveil Security, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, or Glaze UI.
+The feed read models are internal Development services only. They do not expose personalized public endpoints and do not establish recommendation ranking, production feed delivery, authentication, or client synchronization.
+
+This source does **not** yet provide production authentication, public social write APIs, public personalized feed APIs, media upload/transcoding, recommendation ranking, notifications, live streaming, production moderation operations, production storage, mobile applications, production deployment, or accepted integrations with GoreeCloud Identity, Privacy Shield, Wardveil Security, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, or Glaze UI.
 
 ## Development setup
 
@@ -47,7 +50,7 @@ Then open `http://127.0.0.1:8000/`.
 - `GET /readyz/` — database-aware readiness.
 - `GET /api/v1/status/` — bounded product, lifecycle, version, capability, and integration-status information.
 
-No content-creation or account-authentication API is exposed by this milestone. That boundary is intentional until GoreeCloud Identity authorization, Privacy Shield policy, Wardveil Security controls, and abuse protections are defined and implemented.
+No content-creation, account-authentication, or personalized-feed API is exposed by this milestone. That boundary is intentional until GoreeCloud Identity authorization, Privacy Shield policy, Wardveil Security controls, and abuse protections are defined and implemented for those operations.
 
 ## Validation
 
