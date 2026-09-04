@@ -1,0 +1,39 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>GoreeCloud Social — Development</title>
+  <link rel="stylesheet" href="{% static 'social/app.css' %}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="rail" aria-label="Primary navigation">
+      <a class="brand" href="/" aria-label="GoreeCloud Social home"><span class="brand-mark" aria-hidden="true">G</span><span>Social</span></a>
+      <nav class="primary-nav">
+        <a class="nav-item is-active" href="#home">Home</a>
+        <a class="nav-item" href="#discover">Discover</a>
+        <a class="nav-item" href="#video">Video</a>
+        <a class="nav-item" href="#communities">Communities</a>
+        <a class="nav-item" href="#profile">Profile</a>
+      </nav>
+      <button class="create-button" type="button" disabled aria-describedby="create-note">Create</button>
+      <p id="create-note" class="rail-note">Publishing is disabled in the foundation milestone.</p>
+    </aside>
+    <main id="home" class="content">
+      <header class="topbar"><div><p class="eyebrow">GoreeCloud Social</p><h1>Native social foundation</h1></div><span class="status-pill">Development · {{ version }}</span></header>
+      <section class="notice" aria-labelledby="foundation-title"><div><p class="eyebrow">Milestone 0</p><h2 id="foundation-title">One social core. Multiple experiences.</h2><p>Profiles, conversations, photos, video, groups, communities, reactions, and reposts share one application domain and one future authority model.</p></div><div class="notice-state"><strong>Read-only UI</strong><span>No production account or content actions are exposed yet.</span></div></section>
+      <section id="discover" aria-labelledby="feeds-title"><div class="section-heading"><div><p class="eyebrow">Feed architecture</p><h2 id="feeds-title">Choose how Social feels</h2></div><span class="muted">Recommendation ranking is not implemented.</span></div><div class="chip-row" aria-label="Planned feed modes">{% for mode in feed_modes %}<span class="chip">{{ mode }}</span>{% endfor %}</div></section>
+      <section class="grid" aria-label="Foundation capabilities">
+        <article class="card" id="video"><p class="eyebrow">Media</p><h2>Photos, GIFs, short and full video</h2><p>The model already distinguishes media types while production upload, scanning, transcoding, storage, and delivery remain intentionally blocked.</p><div class="media-preview" aria-hidden="true"><span>9:16</span><span>1:1</span><span>16:9</span></div></article>
+        <article class="card" id="communities"><p class="eyebrow">Spaces</p><h2>Groups and communities</h2><p>Public, private, and invitation-only spaces have membership and role primitives for future community moderation.</p><ul class="plain-list"><li>Member</li><li>Moderator</li><li>Administrator</li><li>Owner</li></ul></article>
+        <article class="card" id="profile"><p class="eyebrow">Social graph</p><h2>Profiles and relationships</h2><p>Social profile metadata references GoreeCloud Identity subjects without creating a duplicate password store.</p><div class="profile-sample" aria-hidden="true"><span class="avatar">G</span><span><strong>@social</strong><br><small>Identity-linked profile metadata</small></span></div></article>
+        <article class="card"><p class="eyebrow">Interaction</p><h2>Reactions and reposts</h2><p>Typed reactions, reposts, quote text, reply policy, and moderation state are represented as explicit domain data instead of loose counters.</p><div class="reaction-row" aria-hidden="true"><span>Like</span><span>Love</span><span>Laugh</span><span>Support</span></div></article>
+      </section>
+      <section class="platform-card" aria-labelledby="platform-title"><div><p class="eyebrow">Platform boundary</p><h2 id="platform-title">Integration claims stay evidence-backed</h2><p>The current shell does not simulate Identity, Privacy Shield, Wardveil, Everkeep, Mesh, Manager, or Glaze UI acceptance. Each remains blocked until substantive integration and evidence exist.</p></div><a href="/api/v1/status/">View source status</a></section>
+    </main>
+  </div>
+</body>
+</html>

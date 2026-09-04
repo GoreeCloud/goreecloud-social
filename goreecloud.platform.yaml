@@ -1,0 +1,128 @@
+schema_version: '0.2'
+
+component:
+  type: application
+  id: goreecloud-social
+  product_name: GoreeCloud Social
+  repository: GoreeCloud/goreecloud-social
+
+lifecycle: development
+version: 0.1.0-dev.1
+
+supported_platforms:
+  - linux
+  - web
+
+api:
+  versions:
+    - v1
+  endpoints:
+    - name: liveness
+      url: /livez/
+      purpose: Report process liveness without disclosing private social or dependency data.
+    - name: readiness
+      url: /readyz/
+      purpose: Report database-aware readiness without exposing sensitive dependency detail.
+    - name: service-status
+      url: /api/v1/status/
+      purpose: Report bounded product, source, lifecycle, capability, and integration-status information.
+
+platform_systems:
+  manager:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md]
+    notes: Bounded health and status routes exist for future operational visibility, but no GoreeCloud Manager integration or acceptance exists.
+  privacy_shield:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/privacy.md]
+    notes: Privacy requirements are defined and the foundation avoids contact, location, behavioral-ranking, advertising, and third-party analytics collection, but no Privacy Shield adapter, enforcement contract, or acceptance exists.
+  wardveil_security:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md]
+    notes: The Development server deliberately exposes no public social write API and contains bounded local hardening, but no Wardveil Security integration or acceptance exists.
+  everkeep:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/recovery.md]
+    notes: Social content, permitted media, relationships, spaces, moderation state, and configuration require continuity, but no Everkeep backup, restore, export, or recovery acceptance exists.
+  glaze_ui:
+    result: applicable-blocked
+    version: null
+    evidence: [README.md, SPECIFICATIONS.md, docs/platform-integration-status.md]
+    notes: A responsive Glaze-oriented Development shell exists, but no Glaze UI 1.1.0 conformance or application-specific acceptance exists.
+  mesh:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md]
+    notes: Messenger sharing, notifications, Contacts discovery, Universal Search, media capabilities, deep links, events, and capability registration are planned but no Mesh runtime integration exists.
+    capabilities: []
+    dependencies: []
+    published_events: []
+    consumed_events: []
+  identity:
+    result: applicable-blocked
+    version: null
+    evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md, docs/privacy.md]
+    notes: SocialProfile references an external identity subject and does not store passwords, but GoreeCloud Identity authentication, sessions, scopes, delegated moderation, and acceptance are not implemented.
+
+health:
+  health_endpoint: /livez/
+  readiness_endpoint: /readyz/
+
+continuity:
+  backup:
+    required: true
+    requirements:
+      - Protect Social configuration, permitted user content, social relationships, spaces, memberships, moderation records, and required media relationships according to Privacy Shield policy.
+      - Keep authentication credentials and reusable secrets outside Social application backups unless an approved platform contract explicitly requires protected recovery material.
+  restore:
+    required: true
+    requirements:
+      - Validate restoration into an isolated environment before production qualification.
+      - Verify restored database relationships, permitted media references, moderation state, configuration, and authorization boundaries for the exact release under test.
+  export:
+    required: true
+    requirements:
+      - Provide documented portable exports for user-owned profile, content, media relationships, social graph, and community data where permitted.
+      - Preserve audience, authorship, timestamps, relationships, moderation context, and media metadata needed to interpret exported data without exporting unrelated secrets.
+  portability:
+    required: true
+    requirements:
+      - Use documented versioned interfaces and durable formats so important Social data can be migrated if components are replaced or redesigned.
+      - Keep social-core, feed, media, search, realtime, and moderation boundaries replaceable rather than coupling them through undocumented storage access.
+
+external_dependencies:
+  - name: Django
+    purpose: Development server, relational domain model, read-only status surfaces, validation, and testing framework.
+    required: true
+    version_constraint: 5.2.17
+
+compatibility:
+  platform_contract: '0.2'
+  glaze_ui_required: 1.1.0
+  requires: [goreecloud-platform-contract==0.2]
+  provides: [goreecloud-social-api-v1, goreecloud-social-domain-v1]
+
+evidence:
+  acceptance_tests: []
+  release: []
+
+conformance:
+  status: nonconformant
+  validated_at: null
+  evidence: [README.md, SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md, docs/privacy.md, docs/recovery.md, src/social/models.py, src/social/services.py, src/social/views.py, VERSION]
+  blockers:
+    - GoreeCloud Social remains Development source and has no Stable or production-approved release.
+    - GoreeCloud Identity authentication, session, scope, delegated-moderation, and application acceptance are incomplete.
+    - Privacy Shield policy enforcement and application acceptance are incomplete.
+    - Wardveil Security API, upload, abuse, privileged-action, and application acceptance are incomplete.
+    - Everkeep backup, restore, export, and recovery acceptance are incomplete.
+    - GoreeCloud Mesh registration, events, notifications, Messenger sharing, Contacts discovery, Universal Search, and acceptance are incomplete.
+    - GoreeCloud Manager integration and acceptance are incomplete.
+    - Glaze UI 1.1.0 application-specific rendered and accessibility acceptance is incomplete.
+    - Production media upload, scanning, transcoding, object storage, delivery, and deletion are incomplete.
+    - Authorized write APIs, replies, blocking, muting, mature moderation, anti-spam, recommendation ranking, search, realtime delivery, notifications, and live media are incomplete.
+    - Production database, secret management, reverse-proxy and TLS deployment, scaling, observability, rollback, and target-environment acceptance are incomplete.

@@ -1,0 +1,22 @@
+name: Platform Contract
+
+on:
+  pull_request:
+    paths:
+      - goreecloud.platform.yaml
+      - .github/workflows/platform-contract.yml
+  push:
+    branches: [main]
+    paths:
+      - goreecloud.platform.yaml
+      - .github/workflows/platform-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    uses: GoreeCloud/GoreeCloud/.github/workflows/reusable-platform-manifest.yml@a0d0aa00a2a8e34a575565270b0ac76f50ad0e66
+    with:
+      manifest-path: goreecloud.platform.yaml

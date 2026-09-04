@@ -1,0 +1,1 @@
+"""GoreeCloud Social domain application."""
