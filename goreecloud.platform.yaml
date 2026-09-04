@@ -7,7 +7,7 @@ component:
   repository: GoreeCloud/goreecloud-social
 
 lifecycle: development
-version: 0.1.0-dev.5
+version: 0.1.0-dev.6
 
 supported_platforms:
   - linux
@@ -32,22 +32,22 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md]
-    notes: Bounded health and status routes exist for future operational visibility, but no GoreeCloud Manager integration or acceptance exists.
+    notes: Bounded health and status routes exist for future operational visibility, but no GoreeCloud Manager integration or moderation authority acceptance exists.
   privacy_shield:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/privacy.md]
-    notes: Privacy requirements are defined and the foundation avoids contact, location, behavioral-ranking, advertising, and third-party analytics collection, but no Privacy Shield adapter, enforcement contract, or acceptance exists.
+    notes: Privacy requirements are defined and the foundation avoids contact, location, behavioral-ranking, advertising, and third-party analytics collection; new report and moderation records remain Development domain state without an accepted Privacy Shield purpose, retention, deletion, export, disclosure, or evidence-access contract.
   wardveil_security:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md]
-    notes: The Development server deliberately exposes no public social write, collection, invitation, join-request, space-rule, reply, bookmark, poll-vote, or personalized-feed API and contains bounded local hardening, but no Wardveil Security integration or acceptance exists.
+    notes: The Development server deliberately exposes no public social or moderation write API and now contains bounded Social trust/safety domain records plus active protected-space ban read enforcement, but no Wardveil runtime adapter, malicious-link/file/media evaluation, privileged-action enforcement contract, security-evidence acceptance, or Wardveil application acceptance exists.
   everkeep:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/recovery.md]
-    notes: Social content, permitted media, relationships, profile collections, spaces, invitations, join requests, rules, moderation state, and configuration require continuity, but no Everkeep backup, restore, export, or recovery acceptance exists.
+    notes: Social content, permitted media, relationships, profile collections, spaces, invitations, join requests, rules, bans, reports, moderation cases/actions/appeals, and configuration require continuity, but no Everkeep backup, restore, export, retention-reconciliation, or recovery acceptance exists.
   glaze_ui:
     result: applicable-blocked
     version: null
@@ -57,7 +57,7 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md]
-    notes: Messenger sharing, notifications, Contacts discovery, Universal Search, media capabilities, deep links, events, and capability registration are planned but no Mesh runtime integration exists.
+    notes: Messenger sharing, notifications, Contacts discovery, Universal Search, media capabilities, deep links, events, and capability registration are planned but no Mesh runtime integration exists; moderation evidence is not published through Mesh by this milestone.
     capabilities: []
     dependencies: []
     published_events: []
@@ -66,7 +66,7 @@ platform_systems:
     result: applicable-blocked
     version: null
     evidence: [SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md, docs/privacy.md]
-    notes: SocialProfile references an external identity subject and does not store passwords; new social-graph and community records remain application-domain state, but GoreeCloud Identity authentication, sessions, scopes, delegated moderation, and acceptance are not implemented.
+    notes: SocialProfile references an external identity subject and does not store passwords; moderation actor fields are opaque attributable references only and do not prove authorization because GoreeCloud Identity authentication, sessions, scopes, delegated moderation, and application acceptance are not implemented.
 
 health:
   health_endpoint: /livez/
@@ -76,23 +76,25 @@ continuity:
   backup:
     required: true
     requirements:
-      - Protect Social configuration, permitted user content, social relationships, profile collections, spaces, memberships, invitations, join requests, rules, moderation records, and required media relationships according to Privacy Shield policy.
+      - Protect Social configuration, permitted user content, social relationships, profile collections, spaces, memberships, invitations, join requests, rules, bans, reports, moderation cases/actions/appeals, and required media relationships according to Privacy Shield policy.
       - Keep authentication credentials and reusable secrets outside Social application backups unless an approved platform contract explicitly requires protected recovery material.
+      - Treat moderation and report evidence as sensitive scoped data with explicit retention and restore-time reconciliation rather than permanent ordinary Social history.
   restore:
     required: true
     requirements:
       - Validate restoration into an isolated environment before production qualification.
-      - Verify restored database relationships, permitted media references, moderation state, configuration, and authorization boundaries for the exact release under test.
+      - Verify restored database relationships, permitted media references, bans, moderation state, appeal state, configuration, and authorization boundaries for the exact release under test.
+      - Reconcile restored moderation/report state with current Privacy Shield retention and deletion requirements before ordinary service availability.
   export:
     required: true
     requirements:
       - Provide documented portable exports for user-owned profile, content, media relationships, social graph, profile collections, community memberships, and community data where permitted.
-      - Preserve audience, authorship, timestamps, thread relationships, poll structure, user-owned bookmarks, relationships, relevant collection/community context, moderation context, and media metadata needed to interpret exported data without exporting unrelated secrets.
+      - Preserve audience, authorship, timestamps, thread relationships, poll structure, user-owned bookmarks, relationships, relevant collection/community context, permitted moderation context, and media metadata needed to interpret exported data without exporting unrelated users' reports, protected evidence, or secrets.
   portability:
     required: true
     requirements:
       - Use documented versioned interfaces and durable formats so important Social data can be migrated if components are replaced or redesigned.
-      - Keep social-core, feed, media, search, realtime, and moderation boundaries replaceable rather than coupling them through undocumented storage access.
+      - Keep social-core, feed, media, search, realtime, trust/safety, and moderation boundaries replaceable rather than coupling them through undocumented storage access.
 
 external_dependencies:
   - name: Django
@@ -113,16 +115,16 @@ evidence:
 conformance:
   status: nonconformant
   validated_at: null
-  evidence: [README.md, SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md, docs/privacy.md, docs/recovery.md, src/social/models.py, src/social/services.py, src/social/views.py, src/social/migrations/0003_content_interactions.py, src/social/migrations/0004_social_graph_community.py, tests/test_models.py, tests/test_feeds.py, VERSION]
+  evidence: [README.md, SPECIFICATIONS.md, docs/platform-integration-status.md, docs/security.md, docs/privacy.md, docs/recovery.md, src/social/models.py, src/social/services.py, src/social/views.py, src/social/migrations/0003_content_interactions.py, src/social/migrations/0004_social_graph_community.py, src/social/migrations/0005_trust_safety_groundwork.py, tests/test_models.py, tests/test_visibility.py, tests/test_feeds.py, VERSION]
   blockers:
     - GoreeCloud Social remains Development source and has no Stable or production-approved release.
     - GoreeCloud Identity authentication, session, scope, delegated-moderation, and application acceptance are incomplete.
-    - Privacy Shield policy enforcement and application acceptance are incomplete.
-    - Wardveil Security API, upload, abuse, privileged-action, and application acceptance are incomplete.
-    - Everkeep backup, restore, export, and recovery acceptance are incomplete.
+    - Privacy Shield moderation/report data-purpose, access, retention, deletion, export, disclosure, policy enforcement, and application acceptance are incomplete.
+    - Wardveil Security API, session, upload, malicious-link/file/media, abuse, rate/resource, privileged-action, evidence, and application acceptance are incomplete.
+    - Everkeep backup, restore, export, retention-reconciliation, and recovery acceptance are incomplete.
     - GoreeCloud Mesh registration, events, notifications, Messenger sharing, Contacts discovery, Universal Search, and acceptance are incomplete.
     - GoreeCloud Manager integration and acceptance are incomplete.
     - Glaze UI 1.1.0 application-specific rendered and accessibility acceptance is incomplete.
     - Production media upload, scanning, transcoding, object storage, delivery, and deletion are incomplete.
-    - Public personalized feed APIs, authenticated profile-collection/invitation/join-request/space-rule/reply/bookmark/poll mutation APIs, broader authorized write APIs, role-capability authorization, mature moderation operations, anti-spam, recommendation ranking, search, realtime delivery, notifications, and live media are incomplete.
+    - Public personalized feed APIs, authenticated profile-collection/invitation/join-request/space-rule/reply/bookmark/poll/restrict/report/space-ban/moderation mutation APIs, broader authorized write APIs, role-capability authorization, mature moderation operations, report-rate controls, anti-spam, bot/automation controls, scraping defenses, impersonation handling, age-eligibility controls, recommendation ranking, search, realtime delivery, notifications, and live media are incomplete.
     - Production database, secret management, reverse-proxy and TLS deployment, scaling, observability, rollback, and target-environment acceptance are incomplete.
