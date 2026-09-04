@@ -6,6 +6,9 @@ from social.models import (
     Block,
     Bookmark,
     Follow,
+    ModerationAction,
+    ModerationAppeal,
+    ModerationCase,
     Mute,
     Poll,
     PollOption,
@@ -13,9 +16,12 @@ from social.models import (
     Post,
     ProfileCollection,
     ProfileCollectionMember,
+    ProfileReport,
     Reaction,
+    Restrict,
     SocialProfile,
     Space,
+    SpaceBan,
     SpaceInvitation,
     SpaceJoinRequest,
     SpaceMembership,
@@ -43,6 +49,11 @@ class ModelConstraintTests(TestCase):
             with transaction.atomic():
                 Mute.objects.create(muter=self.a, muted=self.a)
 
+    def test_restrict_cannot_target_self(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Restrict.objects.create(restrictor=self.a, restricted=self.a)
+
     def test_block_relationship_is_unique(self):
         Block.objects.create(blocker=self.a, blocked=self.b)
         with self.assertRaises(IntegrityError):
@@ -54,6 +65,17 @@ class ModelConstraintTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Mute.objects.create(muter=self.a, muted=self.b)
+
+    def test_restrict_relationship_is_unique(self):
+        Restrict.objects.create(restrictor=self.a, restricted=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Restrict.objects.create(restrictor=self.a, restricted=self.b)
+
+    def test_profile_report_cannot_target_reporter(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ProfileReport.objects.create(reporter=self.a, target=self.a, reason="self")
 
     def test_profile_collection_name_is_unique_per_owner_and_kind(self):
         ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.LIST, name="Close friends")
@@ -113,6 +135,13 @@ class ModelConstraintTests(TestCase):
         request = SpaceJoinRequest(space=space, requester=self.b)
         with self.assertRaises(ValidationError):
             request.full_clean()
+
+    def test_space_ban_is_unique_per_space_and_profile(self):
+        space = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="ban-unique", name="Ban Unique", owner=self.a)
+        SpaceBan.objects.create(space=space, profile=self.b, imposed_by_subject="identity:moderator")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SpaceBan.objects.create(space=space, profile=self.b, imposed_by_subject="identity:moderator")
 
     def test_one_reaction_per_profile_per_post(self):
         post = Post.objects.create(author=self.b, body="hello")
@@ -180,3 +209,58 @@ class ModelConstraintTests(TestCase):
         vote = PollVote(poll=first_poll, option=wrong_option, voter=self.b)
         with self.assertRaises(ValidationError):
             vote.full_clean()
+
+    def test_moderation_case_requires_exactly_one_target(self):
+        post = Post.objects.create(author=self.a, body="case")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ModerationCase.objects.create(
+                    post=post,
+                    profile=self.b,
+                    opened_by_subject="identity:moderator",
+                    reason="multiple targets",
+                )
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ModerationCase.objects.create(
+                    opened_by_subject="identity:moderator",
+                    reason="no target",
+                )
+
+    def test_post_moderation_case_must_match_target_space(self):
+        first = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="case-first", name="Case First", owner=self.a)
+        second = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="case-second", name="Case Second", owner=self.a)
+        post = Post.objects.create(author=self.a, space=first, body="case target", audience=Post.Audience.SPACE)
+        case = ModerationCase(
+            post=post,
+            space=second,
+            opened_by_subject="identity:moderator",
+            reason="wrong scope",
+        )
+        with self.assertRaises(ValidationError):
+            case.full_clean()
+
+    def test_moderation_appeal_is_unique_per_case_and_appellant(self):
+        case = ModerationCase.objects.create(
+            profile=self.b,
+            opened_by_subject="identity:moderator",
+            reason="profile case",
+        )
+        ModerationAppeal.objects.create(case=case, appellant=self.b, reason="review")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ModerationAppeal.objects.create(case=case, appellant=self.b, reason="duplicate")
+
+    def test_moderation_action_records_actor_and_kind(self):
+        case = ModerationCase.objects.create(
+            profile=self.b,
+            opened_by_subject="identity:moderator",
+            reason="profile case",
+        )
+        action = ModerationAction.objects.create(
+            case=case,
+            actor_subject="identity:moderator",
+            kind=ModerationAction.Kind.WARN,
+        )
+        self.assertEqual(action.actor_subject, "identity:moderator")
+        self.assertEqual(action.kind, ModerationAction.Kind.WARN)
