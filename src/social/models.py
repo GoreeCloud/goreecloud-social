@@ -87,6 +87,30 @@ class Follow(models.Model):
         ]
 
 
+class Block(models.Model):
+    blocker = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="blocks_created")
+    blocked = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="blocks_received")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("blocker", "blocked"), name="social_unique_block"),
+            models.CheckConstraint(condition=~models.Q(blocker=models.F("blocked")), name="social_block_no_self"),
+        ]
+
+
+class Mute(models.Model):
+    muter = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="mutes_created")
+    muted = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="mutes_received")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("muter", "muted"), name="social_unique_mute"),
+            models.CheckConstraint(condition=~models.Q(muter=models.F("muted")), name="social_mute_no_self"),
+        ]
+
+
 class Post(models.Model):
     class ContentKind(models.TextChoices):
         TEXT = "text", "Text"
