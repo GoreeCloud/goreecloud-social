@@ -378,3 +378,135 @@ class PostReport(models.Model):
     details = models.CharField(max_length=1000, blank=True)
     state = models.CharField(max_length=16, choices=State.choices, default=State.OPEN)
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class Restrict(models.Model):
+    restrictor = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="restrictions_created")
+    restricted = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="restrictions_received")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("restrictor", "restricted"), name="social_unique_restrict"),
+            models.CheckConstraint(condition=~models.Q(restrictor=models.F("restricted")), name="social_restrict_no_self"),
+        ]
+
+
+class ProfileReport(models.Model):
+    class State(models.TextChoices):
+        OPEN = "open", "Open"
+        REVIEWING = "reviewing", "Reviewing"
+        RESOLVED = "resolved", "Resolved"
+        DISMISSED = "dismissed", "Dismissed"
+
+    reporter = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="profile_reports_created")
+    target = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="profile_reports_received")
+    reason = models.CharField(max_length=80)
+    details = models.CharField(max_length=1000, blank=True)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(condition=~models.Q(reporter=models.F("target")), name="social_profile_report_no_self")
+        ]
+
+
+class SpaceBan(models.Model):
+    class State(models.TextChoices):
+        ACTIVE = "active", "Active"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    space = models.ForeignKey(Space, on_delete=models.CASCADE, related_name="bans")
+    profile = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="space_bans")
+    imposed_by_subject = models.CharField(max_length=255)
+    reason = models.CharField(max_length=500, blank=True)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.ACTIVE)
+    expires_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("space", "profile"), name="social_unique_space_ban")]
+
+
+class ModerationCase(models.Model):
+    class State(models.TextChoices):
+        OPEN = "open", "Open"
+        REVIEWING = "reviewing", "Reviewing"
+        ACTIONED = "actioned", "Actioned"
+        DISMISSED = "dismissed", "Dismissed"
+        CLOSED = "closed", "Closed"
+
+    post = models.ForeignKey(Post, on_delete=models.SET_NULL, null=True, blank=True, related_name="moderation_cases")
+    profile = models.ForeignKey(
+        SocialProfile,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="moderation_cases",
+    )
+    space = models.ForeignKey(Space, on_delete=models.SET_NULL, null=True, blank=True, related_name="moderation_cases")
+    opened_by_subject = models.CharField(max_length=255)
+    reason = models.CharField(max_length=80)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.OPEN)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.post_id is not None and self.space_id is not None and self.post.space_id != self.space_id:
+            raise ValidationError({"space": "A post moderation case cannot claim a different space than its target post."})
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(post__isnull=False) & models.Q(profile__isnull=True))
+                    | (models.Q(post__isnull=True) & models.Q(profile__isnull=False))
+                ),
+                name="social_moderation_case_one_target",
+            )
+        ]
+
+
+class ModerationAction(models.Model):
+    class Kind(models.TextChoices):
+        WARN = "warn", "Warn"
+        LIMIT = "limit", "Limit"
+        REMOVE = "remove", "Remove"
+        RESTORE = "restore", "Restore"
+        RESTRICT = "restrict", "Restrict"
+        SUSPEND = "suspend", "Suspend"
+        SPACE_BAN = "space-ban", "Space ban"
+        SPACE_UNBAN = "space-unban", "Space unban"
+
+    case = models.ForeignKey(ModerationCase, on_delete=models.CASCADE, related_name="actions")
+    actor_subject = models.CharField(max_length=255)
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    note = models.CharField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ModerationAppeal(models.Model):
+    class State(models.TextChoices):
+        SUBMITTED = "submitted", "Submitted"
+        REVIEWING = "reviewing", "Reviewing"
+        UPHELD = "upheld", "Upheld"
+        MODIFIED = "modified", "Modified"
+        OVERTURNED = "overturned", "Overturned"
+        DISMISSED = "dismissed", "Dismissed"
+
+    case = models.ForeignKey(ModerationCase, on_delete=models.CASCADE, related_name="appeals")
+    appellant = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="moderation_appeals")
+    reason = models.CharField(max_length=1000)
+    state = models.CharField(max_length=16, choices=State.choices, default=State.SUBMITTED)
+    resolution_note = models.CharField(max_length=1000, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=("case", "appellant"), name="social_unique_moderation_appeal")
+        ]
