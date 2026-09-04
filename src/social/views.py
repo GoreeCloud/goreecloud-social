@@ -65,6 +65,7 @@ def service_status(request):
             "reactions-and-reposts-domain",
             "audience-visibility-read-model",
             "relationship-safety-read-enforcement",
+            "following-and-chronological-feed-read-models",
         ],
         "platform_integrations": PLATFORM_INTEGRATIONS,
     })
