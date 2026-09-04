@@ -24,18 +24,23 @@ The long-term product scope includes:
 - search, notifications, deep links, and authorized integrations with other GoreeCloud applications through defined contracts;
 - export, migration, deletion, retention, recovery, and continuity support that preserves user control.
 
-## 3. Unified content model
+## 3. Unified content and social-domain model
 
-GoreeCloud Social should use one versioned content model with presentation-specific surfaces rather than maintaining unrelated post systems for each experience.
+GoreeCloud Social uses versioned domain models with presentation-specific surfaces rather than unrelated systems for each social experience.
 
 A post may contain text and zero or more typed media attachments. Presentation can adapt by surface: a text-focused conversation card in Home, a media card in a profile, an immersive vertical player in Video, or a community-scoped post in a group. The underlying authority, audience, moderation state, and identity relationship remain consistent.
 
 The native Development foundation implements the following domain primitives:
 
 - `SocialProfile`: application-owned social profile metadata linked to an external GoreeCloud Identity subject;
+- `ProfileCollection`: an owner-curated List or Circle record;
+- `ProfileCollectionMember`: unique profile membership within a profile collection;
 - `Space`: a group or community with visibility and an owning social profile;
 - `SpaceMembership`: member, moderator, administrator, or owner role and membership state;
-- `Follow`: directional social relationship with a request/accepted state and a no-self-follow invariant;
+- `SpaceInvitation`: explicit invitation intent from an inviter to an invitee for a space;
+- `SpaceJoinRequest`: explicit profile-initiated request to join a space;
+- `SpaceRule`: ordered active/inactive rule metadata scoped to a space;
+- `Follow`: directional social relationship with a pending/accepted state and a no-self-follow invariant;
 - `Block`: bilateral read-safety relationship from a blocking profile to a blocked profile, with uniqueness and no-self-block invariants;
 - `Mute`: viewer-selected read-safety relationship from a muting profile to a muted profile, with uniqueness and no-self-mute invariants;
 - `Post`: author, optional space, optional parent-reply relationship, content type, audience, reply policy, moderation state, body, and timestamps;
@@ -48,7 +53,7 @@ The native Development foundation implements the following domain primitives:
 - `Repost`: a repost or quote-repost relationship;
 - `PostReport`: a user report record for later moderation workflows.
 
-The current code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior. Reply, poll, and bookmark records are Development domain groundwork only and are not public mutation APIs.
+The current code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior. Profile collections, invitations, join requests, rules, replies, polls, and bookmarks are Development domain groundwork only and are not public mutation APIs.
 
 ## 4. Audience and social graph
 
@@ -66,7 +71,9 @@ An author can always retrieve their own visible-state posts through the applicat
 
 For an identified viewer, ordinary read visibility also excludes posts whose author is blocked by the viewer, posts whose author has blocked the viewer, and posts whose author is muted by the viewer. Blocking therefore acts bilaterally at this read boundary, while muting is viewer-selected. These relationships are enforced server-side in the visibility service rather than treated as cosmetic client filtering.
 
-Future custom audiences, account restrictions, age policy, legal restrictions, community bans, and Privacy Shield controls must be composed into the authoritative visibility decision rather than applied as cosmetic client-side filtering.
+Accepted mutual relationships are derived from reciprocal accepted follows. Profile collections do not create follow or mutual relationships. The current List/Circle records are internal collection groundwork; custom audience evaluation from Circle membership is not yet implemented by the visibility service.
+
+Future custom audiences, account restrictions, age policy, legal restrictions, community bans, role-capability policy, and Privacy Shield controls must be composed into the authoritative visibility decision rather than applied as cosmetic client-side filtering.
 
 ## 5. Feeds and discovery
 
@@ -90,13 +97,15 @@ Recommendation systems must expose enough information for users to understand wh
 
 The current foundation does not implement recommendation ranking or behavioral profiling.
 
-## 6. Groups and communities
+## 6. Profiles, lists, groups, and communities
 
-Groups and communities are first-class social spaces, not tags around ordinary posts.
+Groups and communities are first-class social spaces, not tags around ordinary posts. Owner-curated Lists and Circles are separate profile collections and do not create community membership or global social relationships.
 
-A space can be public, private, or invitation-only. Its future policy model should support membership requests, invitations, member roles, moderator teams, rules, pinned content, announcements, bans, restricted members, content approval, moderation queues, and scoped discovery.
+A space can be public, private, or invitation-only. The Development domain now includes explicit `SpaceInvitation`, `SpaceJoinRequest`, and ordered `SpaceRule` records in addition to `SpaceMembership`. Invitation validation rejects an invitee who is already an accepted member. Join-request validation rejects a requester who is already an accepted member. Database constraints prevent duplicate current records under the current Development model, prevent self-invitations, and keep rule positions unique within a space.
 
-Administrative capability inside a space does not grant platform-wide authority. Community delegation must use GoreeCloud Identity-scoped authority when implemented, and moderator actions must remain auditable and subject to Wardveil and Privacy Shield requirements.
+These records are structural groundwork, not completed community workflows. Public invitation, join-request, list/circle, rule-management, role-management, ownership-transfer, membership-approval, or moderation APIs do not exist. The current source does not claim that a moderator/admin role label alone authorizes a privileged action.
+
+Future policy should support explicit role capabilities, moderator teams, pinned content, announcements, bans, restricted members, content approval, moderation queues, rule acknowledgement, ownership transfer, and scoped discovery. Administrative capability inside a space does not grant platform-wide authority. Community delegation must use GoreeCloud Identity-scoped authority when implemented, and moderator actions must remain auditable and subject to Wardveil and Privacy Shield requirements.
 
 ## 7. Media architecture
 
@@ -130,7 +139,7 @@ Single-choice poll groundwork consists of one `Poll` per poll-kind post, ordered
 
 Reposts and quote-posts preserve the relationship to the original content and its current accessibility. Reposting must not create a permanent bypass around later deletion, privacy restriction, moderation removal, or audience changes.
 
-Structured mentions, hashtags, authenticated sharing, and public reply/bookmark/poll workflows remain planned. None of the new Development domain records create unauthenticated write endpoints.
+Structured mentions, hashtags, authenticated sharing, and public reply/bookmark/poll workflows remain planned. None of the Development domain records create unauthenticated write endpoints.
 
 ## 9. Trust, safety, and moderation
 
@@ -153,23 +162,23 @@ The Development foundation implements report, block, and mute data primitives pl
 
 GoreeCloud Identity is the authority for authentication, sessions, trusted devices, application/service identities, and actor authorization.
 
-GoreeCloud Social must not create a second authoritative credential store. The Social database may own application-specific profile information and social relationships, but the `identity_subject` field is a reference to the external authoritative identity.
+GoreeCloud Social must not create a second authoritative credential store. The Social database may own application-specific profile information, profile collections, social relationships, and community state, but the `identity_subject` field is a reference to the external authoritative identity.
 
-Future integration must define scopes for profile management, publishing, replies, reactions, polls, bookmarks, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs and personalized feed APIs must remain unavailable until an accepted authority model exists.
+Future integration must define scopes for profile management, list/circle management, following, invitations, join requests, membership and rule administration, publishing, replies, reactions, polls, bookmarks, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs and personalized feed APIs must remain unavailable until an accepted authority model exists.
 
 ## 11. Privacy Shield integration
 
-Privacy Shield must govern profile visibility, audience selection, contact discovery, recommendation signals, activity history, location, analytics, media metadata, retention, deletion, export, external disclosure, and cross-application data movement.
+Privacy Shield must govern profile visibility, audience selection, list/circle data, invitations and join requests, community membership, contact discovery, recommendation signals, activity history, location, analytics, media metadata, retention, deletion, export, external disclosure, and cross-application data movement.
 
 Recommendation and analytics data require explicit data-purpose definitions. GoreeCloud Social must not treat authentication as consent or platform-internal data availability as permission to process that data for unrelated ranking or analytics.
 
-The current foundation performs no contact ingestion, behavioral profiling, location collection, advertising tracking, or third-party disclosure. Privacy Shield integration and acceptance remain blocked.
+The current foundation performs no contact ingestion, behavioral profiling, location collection, advertising tracking, or third-party disclosure. New profile-collection and community-workflow records remain local Development domain state and do not constitute Privacy Shield integration or acceptance.
 
 ## 12. Wardveil Security integration
 
 Wardveil Security must protect account/session operations, privileged moderation, API use, automation, uploads, malicious links/files, service communication, and security-sensitive administration.
 
-The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write and personalized-feed routes. Relationship-safety, feed, threaded-reply, bookmark, and poll state are currently exercised through internal domain/query services only. This is local Development hardening and domain groundwork; it is not Wardveil integration or acceptance.
+The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write and personalized-feed routes. Relationship-safety, feed, social-collection/community-workflow, threaded-reply, bookmark, and poll state are currently exercised through internal domain/query services only. This is local Development hardening and domain groundwork; it is not Wardveil integration or acceptance.
 
 ## 13. GoreeCloud Mesh integration
 
@@ -187,15 +196,15 @@ No Mesh runtime integration is implemented by the current foundation.
 
 ## 14. Everkeep continuity
 
-Important social configuration, posts, permitted media, thread relationships, user-owned bookmarks, poll structure and permitted vote state, other relationships, groups/communities, moderation records, and required application state need defined backup, restore, migration, and export behavior.
+Important social configuration, posts, permitted media, thread relationships, user-owned bookmarks, poll structure and permitted vote state, profile collections, follow/block/mute state, spaces, memberships, invitations, join requests, rules, moderation records, and required application state need defined backup, restore, migration, and export behavior.
 
-Continuity must respect Privacy Shield retention and deletion. A deleted post must not silently become permanently retained merely because backup exists. Recovery must preserve Identity and Wardveil protection rather than becoming an alternate authorization path.
+Continuity must respect Privacy Shield retention and deletion. A deleted post, relationship, invitation, or private collection must not silently become permanently retained merely because backup exists. Recovery must preserve Identity and Wardveil protection rather than becoming an alternate authorization path.
 
 Everkeep integration and restore acceptance remain blocked.
 
 ## 15. GoreeCloud Manager
 
-GoreeCloud Manager should eventually expose bounded operational state such as version, lifecycle, health, dependency status, platform-conformance status, moderation-service health, media-processing health, and maintenance state. It must not become the source of social identity, privacy policy, or moderation authority merely because it can display or invoke administrative workflows.
+GoreeCloud Manager should eventually expose bounded operational state such as version, lifecycle, health, dependency status, platform-conformance status, moderation-service health, media-processing health, and maintenance state. It must not become the source of social identity, privacy policy, relationship authority, community authority, or moderation authority merely because it can display or invoke administrative workflows.
 
 The status endpoint provides bounded source identity for later management integration. No Manager integration is currently implemented.
 
@@ -215,9 +224,9 @@ The initial API version is `v1`. The implemented HTTP routes remain intentionall
 - `/readyz/` — database-aware readiness;
 - `/api/v1/status/` — bounded product and Development capability status.
 
-Following and Chronological are internal query services, not HTTP feed APIs. Threaded replies, bookmarks, polls, and poll votes are internal domain records, not mutation APIs.
+Following and Chronological are internal query services, not HTTP feed APIs. Profile collections, space invitations, join requests, rules, threaded replies, bookmarks, polls, and poll votes are internal domain records, not public mutation APIs.
 
-Future APIs must use scoped authorization, versioned contracts, request identifiers, bounded pagination, validation, idempotency where appropriate, rate controls, documented errors, and explicit privacy behavior.
+Future APIs must use scoped authorization, versioned contracts, request identifiers, bounded pagination, validation, idempotency where appropriate, rate controls, documented errors, explicit privacy behavior, and exact role/capability checks for community administration.
 
 Direct cross-application database access is not an accepted integration method.
 
@@ -259,7 +268,7 @@ Milestone 2 feed-read groundwork added:
 - regression tests for feed source selection, safety filtering, anonymous behavior, and chronological ordering;
 - Development version and source-status updates without exposing a personalized public feed API.
 
-Milestone 3 content-interaction groundwork adds:
+Milestone 3 content-interaction groundwork added:
 
 - explicit parent-reply relationships on posts with self-reply and cross-space validation;
 - a `poll` post kind plus `Poll`, ordered `PollOption`, and single-choice `PollVote` records;
@@ -268,6 +277,16 @@ Milestone 3 content-interaction groundwork adds:
 - migration `0003_content_interactions` and regression coverage for the new invariants;
 - Development version and source-status updates without opening public reply, bookmark, poll, or vote mutation APIs.
 
+Milestone 4 social-graph/community groundwork adds:
+
+- owner-curated `ProfileCollection` records typed as List or Circle, with unique owner/kind/name combinations;
+- `ProfileCollectionMember` with unique profile membership per collection;
+- explicit `SpaceInvitation` records with lifecycle state, no-self-invitation protection, and accepted-member validation;
+- explicit `SpaceJoinRequest` records with lifecycle state and accepted-member validation;
+- ordered `SpaceRule` records with active state and unique position per space;
+- migration `0004_social_graph_community` and regression coverage for the new invariants;
+- Development version and bounded source-status updates without opening public collection, invitation, join-request, rule, role, or membership mutation APIs.
+
 These milestones are Development source only. They do not establish public availability, Stable qualification, production safety, platform-system acceptance, or production readiness.
 
 ## 20. Roadmap
@@ -275,9 +294,9 @@ These milestones are Development source only. They do not establish public avail
 Subsequent milestones should prioritize, in order:
 
 1. accepted GoreeCloud Identity authentication and scoped authorization;
-2. Privacy Shield data-category, purpose, retention, recommendation, disclosure, and deletion contracts;
+2. Privacy Shield data-category, purpose, retention, recommendation, relationship/community disclosure, and deletion contracts;
 3. Wardveil API, session, upload, abuse, and privileged-action protections;
-4. authorized publishing/reply/reaction/repost/bookmark/poll APIs with concurrency and idempotency controls;
+4. authorized profile/follow/collection/community/publishing/reply/reaction/repost/bookmark/poll APIs with exact role-capability checks, concurrency controls, and idempotency where needed;
 5. production media upload, processing, storage, export, and deletion architecture;
 6. richer moderation workflows, restrictions, community bans, rate controls, anti-spam, appeals, and evidence;
 7. authenticated, paginated Following/Chronological feed APIs and client surfaces using the validated read models;
