@@ -30,25 +30,27 @@ GoreeCloud Social should use one versioned content model with presentation-speci
 
 A post may contain text and zero or more typed media attachments. Presentation can adapt by surface: a text-focused conversation card in Home, a media card in a profile, an immersive vertical player in Video, or a community-scoped post in a group. The underlying authority, audience, moderation state, and identity relationship remain consistent.
 
-The initial native foundation implements the following domain primitives:
+The native Development foundation implements the following domain primitives:
 
 - `SocialProfile`: application-owned social profile metadata linked to an external GoreeCloud Identity subject;
 - `Space`: a group or community with visibility and an owning social profile;
 - `SpaceMembership`: member, moderator, administrator, or owner role and membership state;
 - `Follow`: directional social relationship with a request/accepted state and a no-self-follow invariant;
+- `Block`: bilateral read-safety relationship from a blocking profile to a blocked profile, with uniqueness and no-self-block invariants;
+- `Mute`: viewer-selected read-safety relationship from a muting profile to a muted profile, with uniqueness and no-self-mute invariants;
 - `Post`: author, optional space, content type, audience, reply policy, moderation state, body, and timestamps;
 - `MediaAttachment`: ordered photo, video, or GIF reference plus accessibility alternative text;
 - `Reaction`: one typed reaction from a profile to a post;
 - `Repost`: a repost or quote-repost relationship;
 - `PostReport`: a user report record for later moderation workflows.
 
-The initial code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior.
+The current code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior.
 
 ## 4. Audience and social graph
 
 Audience evaluation is a first-class authorization concern, not merely a user-interface filter.
 
-The first foundation implements read-side visibility semantics for:
+The foundation implements read-side visibility semantics for:
 
 - `public` — visible without a social profile;
 - `followers` — visible to accepted followers of the author;
@@ -58,7 +60,9 @@ The first foundation implements read-side visibility semantics for:
 
 An author can always retrieve their own visible-state posts through the application visibility service. Removed, limited, and pending-moderation states are excluded from ordinary visibility queries.
 
-Future custom audiences, blocks, mutes, account restrictions, age policy, legal restrictions, community bans, and Privacy Shield controls must be composed into the authoritative visibility decision rather than applied as cosmetic client-side filtering.
+For an identified viewer, ordinary read visibility now also excludes posts whose author is blocked by the viewer, posts whose author has blocked the viewer, and posts whose author is muted by the viewer. Blocking therefore acts bilaterally at this read boundary, while muting is viewer-selected. These relationships are enforced server-side in the visibility service rather than treated as cosmetic client filtering.
+
+Future custom audiences, account restrictions, age policy, legal restrictions, community bans, and Privacy Shield controls must be composed into the authoritative visibility decision rather than applied as cosmetic client-side filtering.
 
 ## 5. Feeds and discovery
 
@@ -76,7 +80,7 @@ Planned feed families include:
 
 Recommendation systems must expose enough information for users to understand why material is shown, reduce topics or signals, reset recommendations, and choose less-personalized or chronological behavior where supported. Engagement collection must not automatically become unrestricted profiling.
 
-The initial foundation does not implement recommendation ranking or behavioral profiling.
+The current foundation does not implement recommendation ranking or behavioral profiling.
 
 ## 6. Groups and communities
 
@@ -104,7 +108,7 @@ The intended media pipeline includes:
 - retention, deletion, export, and Everkeep continuity behavior;
 - lifecycle cleanup for failed or abandoned uploads.
 
-Production media processing, object storage, CDN behavior, and transcoding are not implemented in the initial foundation.
+Production media processing, object storage, CDN behavior, and transcoding are not implemented in the current foundation.
 
 ## 8. Reactions, reposts, and interaction
 
@@ -112,11 +116,11 @@ The interaction model should support ordinary likes as well as a bounded set of 
 
 Reposts and quote-posts should preserve the relationship to the original content and its current accessibility. Reposting must not create a permanent bypass around later deletion, privacy restriction, moderation removal, or audience changes.
 
-Replies, mentions, hashtags, bookmarks, polls, and sharing are planned but not yet implemented by the initial server API.
+Replies, mentions, hashtags, bookmarks, polls, and sharing are planned but not yet implemented by the Development server API.
 
 ## 9. Trust, safety, and moderation
 
-A combined social platform requires safety architecture from the beginning. Planned controls include:
+A combined social platform requires safety architecture from the beginning. Required controls include:
 
 - reporting, blocking, muting, restricting, and community bans;
 - comment and reply controls;
@@ -129,7 +133,7 @@ A combined social platform requires safety architecture from the beginning. Plan
 - age-appropriate behavior where required by the supported deployment and user population;
 - auditability for privileged moderation actions.
 
-The initial foundation implements a report data primitive only. It does not claim production abuse detection or moderation operations.
+The Development foundation now implements report, block, and mute data primitives plus block/mute enforcement in ordinary read visibility. It does not expose public mutation APIs for those relationships and does not claim production abuse detection, restriction workflows, community-ban enforcement, appeals, anti-spam, or mature moderation operations.
 
 ## 10. GoreeCloud Identity integration
 
@@ -145,13 +149,13 @@ Privacy Shield must govern profile visibility, audience selection, contact disco
 
 Recommendation and analytics data require explicit data-purpose definitions. GoreeCloud Social must not treat authentication as consent or platform-internal data availability as permission to process that data for unrelated ranking or analytics.
 
-The initial foundation performs no contact ingestion, behavioral profiling, location collection, advertising tracking, or third-party disclosure. Privacy Shield integration and acceptance remain blocked.
+The current foundation performs no contact ingestion, behavioral profiling, location collection, advertising tracking, or third-party disclosure. Privacy Shield integration and acceptance remain blocked.
 
 ## 12. Wardveil Security integration
 
 Wardveil Security must protect account/session operations, privileged moderation, API use, automation, uploads, malicious links/files, service communication, and security-sensitive administration.
 
-The initial server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write routes. This is local Development hardening only; it is not Wardveil integration or acceptance.
+The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write routes. Relationship-safety state is currently exercised through the internal domain model and read service only. This is local Development hardening and safety groundwork; it is not Wardveil integration or acceptance.
 
 ## 13. GoreeCloud Mesh integration
 
@@ -165,7 +169,7 @@ GoreeCloud Mesh is the intended coordination layer for replaceable integrations 
 - event publication for bounded social-domain changes;
 - capability discovery without treating discovery as authorization.
 
-No Mesh runtime integration is implemented by the initial foundation.
+No Mesh runtime integration is implemented by the current foundation.
 
 ## 14. Everkeep continuity
 
@@ -179,23 +183,23 @@ Everkeep integration and restore acceptance remain blocked.
 
 GoreeCloud Manager should eventually expose bounded operational state such as version, lifecycle, health, dependency status, platform-conformance status, moderation-service health, media-processing health, and maintenance state. It must not become the source of social identity, privacy policy, or moderation authority merely because it can display or invoke administrative workflows.
 
-The initial status endpoint provides bounded source identity for later management integration. No Manager integration is currently implemented.
+The status endpoint provides bounded source identity for later management integration. No Manager integration is currently implemented.
 
 ## 16. Glaze UI
 
 All user-facing Social surfaces must use the current Stable Glaze UI consumer baseline and pass application-specific visual, responsive, touch, keyboard, reduced-motion, contrast, text-scaling, screen-reader, and platform acceptance before Stable eligibility.
 
-The initial repository contains a responsive, accessible development shell that establishes information architecture only. It does not claim Glaze UI 1.1.0 conformance or acceptance.
+The repository contains a responsive, accessible development shell that establishes information architecture only. It does not claim Glaze UI 1.1.0 conformance or acceptance.
 
 Primary mobile navigation is intended to center on Home, Discover, Create, Communities, and Profile, with notification and Messenger access available through shared GoreeCloud surfaces. Larger displays may expand to a multi-column layout while preserving the same information architecture.
 
 ## 17. API and service boundaries
 
-The initial API version is `v1`. The first implemented routes are intentionally read-only:
+The initial API version is `v1`. The implemented routes remain intentionally read-only:
 
 - `/livez/` — process liveness;
 - `/readyz/` — database-aware readiness;
-- `/api/v1/status/` — bounded product and development capability status.
+- `/api/v1/status/` — bounded product and Development capability status.
 
 Future APIs must use scoped authorization, versioned contracts, request identifiers, bounded pagination, validation, idempotency where appropriate, rate controls, documented errors, and explicit privacy behavior.
 
@@ -203,27 +207,35 @@ Direct cross-application database access is not an accepted integration method.
 
 ## 18. Initial deployment and clients
 
-The first implementation is a self-hosted web/server development foundation on Linux, with a responsive web interface. Long-term client targets may include PWA/web, Android, iOS, and desktop where a dedicated client adds value.
+The first implementation is a self-hosted web/server Development foundation on Linux, with a responsive web interface. Long-term client targets may include PWA/web, Android, iOS, and desktop where a dedicated client adds value.
 
 Mobile and desktop clients should share authoritative APIs and platform contracts while preserving platform-appropriate interaction behavior. Offline support must distinguish drafts/cached content from authoritative synchronized social state.
 
-Production database, reverse proxy, TLS termination, media storage, background jobs, realtime fan-out, search indexing, recommendation services, notification delivery, and horizontal scalability are not established by the initial foundation.
+Production database, reverse proxy, TLS termination, media storage, background jobs, realtime fan-out, search indexing, recommendation services, notification delivery, and horizontal scalability are not established by the current foundation.
 
-## 19. Current implementation milestone
+## 19. Current implementation milestones
 
-Milestone 0 establishes the smallest useful native foundation:
+Milestone 0 established the smallest useful native foundation:
 
 - canonical product and repository documentation;
 - Platform Contract v0.2 participation;
-- Django development server;
+- Django Development server;
 - liveness/readiness/source-status routes;
 - social profile, group/community, membership, follow, post, media-reference, reaction, repost, and report models;
 - read-side audience visibility service;
-- responsive development UI shell;
+- responsive Development UI shell;
 - tests and continuous integration;
 - explicit documentation of security, privacy, continuity, and platform-integration blockers.
 
-This milestone is Development source only. It does not establish public availability, Stable qualification, production safety, platform-system acceptance, or production readiness.
+Milestone 1 relationship-safety groundwork adds:
+
+- `Block` and `Mute` domain records with database uniqueness and self-target prevention;
+- bilateral block enforcement in ordinary server-side read visibility;
+- viewer-selected mute enforcement in ordinary server-side read visibility;
+- regression coverage for public, follower, mutual, space, and private-to-self visibility behavior under block/mute relationships;
+- Development capability/status and documentation updates without opening unauthenticated mutation APIs.
+
+These milestones are Development source only. They do not establish public availability, Stable qualification, production safety, platform-system acceptance, or production readiness.
 
 ## 20. Roadmap
 
@@ -234,7 +246,7 @@ Subsequent milestones should prioritize, in order:
 3. Wardveil API, session, upload, abuse, and privileged-action protections;
 4. authorized publishing/reply/reaction/repost APIs with concurrency and idempotency controls;
 5. production media upload, processing, storage, export, and deletion architecture;
-6. moderation workflows, blocks, mutes, rate controls, anti-spam, appeals, and evidence;
+6. richer moderation workflows, restrictions, community bans, rate controls, anti-spam, appeals, and evidence;
 7. Following/chronological feeds before opaque recommendation ranking;
 8. controlled Discover/Video recommendation systems with user-facing transparency controls;
 9. Mesh notifications, Messenger sharing, Contacts discovery, Universal Search, and events;
