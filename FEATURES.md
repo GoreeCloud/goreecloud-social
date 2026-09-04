@@ -12,6 +12,7 @@
 - Reactions, reposts/quote text, and post-report primitives.
 - Audience-aware read visibility for public, followers, mutual relationships, spaces, and private-to-self content.
 - Ordinary read visibility that excludes authors blocked by the viewer, authors who have blocked the viewer, and authors muted by the viewer.
+- Internal Following and Chronological feed read models that compose on the authoritative visibility boundary instead of duplicating audience or relationship-safety rules.
 - Read-only liveness, readiness, and source-status endpoints.
 - Responsive Development interface shell.
 - Repository CI and Platform Contract v0.2 declaration.
@@ -20,7 +21,7 @@
 
 - Authenticated publishing, editing, replies, deletion, bookmarks, mentions, hashtags, polls, and sharing.
 - Photo galleries, albums, short-form video, full video, captions, subtitles, thumbnails, and transcoding.
-- Following, chronological, Discover/For You, Communities, Groups, Video, media, and optional Trending feeds.
+- Public feed APIs and client surfaces for Following and Chronological, plus Discover/For You, Communities, Groups, Video, media, and optional Trending experiences.
 - Recommendation transparency, topic/signal controls, reset controls, and less-personalized feed options.
 - Public/private profiles, mutual relationships, lists/circles, invitations, and richer profile surfaces.
 - Full group/community rules, moderator teams, queues, member approvals, bans, announcements, and pinned content.
