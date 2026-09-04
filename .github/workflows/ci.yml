@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, "feature/**", "feat/**", "fix/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  source-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      SOCIAL_ENV: test
+      SOCIAL_SECRET_KEY: ci-test-only-key-not-for-production
+      SOCIAL_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      SOCIAL_SQLITE_PATH: /tmp/goreecloud-social-ci.sqlite3
+    steps:
+      - name: Check out exact revision
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+          cache: pip
+      - name: Install pinned dependencies
+        run: python -m pip install -r requirements.txt
+      - name: Validate repository structure
+        run: python scripts/validate_repository.py
+      - name: Compile Python source
+        run: python -m compileall -q manage.py src tests scripts
+      - name: Verify committed migrations
+        run: python manage.py makemigrations --check --dry-run
+      - name: Apply development schema
+        run: python manage.py migrate --noinput
+      - name: Run Django system checks
+        run: python manage.py check
+      - name: Run tests
+        run: python manage.py test tests -v 2
+      - name: Run production-oriented Django deployment checks
+        env:
+          SOCIAL_ENV: production
+          SOCIAL_SECRET_KEY: ci-only-production-check-key-012345678901234567890123456789
+          SOCIAL_ALLOWED_HOSTS: social.invalid
+          SOCIAL_SQLITE_PATH: /tmp/goreecloud-social-deploy-check.sqlite3
+        run: python manage.py check --deploy
