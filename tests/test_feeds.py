@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from social.models import Block, Follow, Mute, Post, SocialProfile, Space, SpaceMembership
+from social.models import Block, Follow, Mute, Post, SocialProfile, Space, SpaceBan, SpaceMembership
 from social.services import chronological_feed_for, following_feed_for
 
 
@@ -91,6 +91,18 @@ class FeedReadModelTests(TestCase):
         expected = [self.own_post.id, self.space_post.id, self.followed_post.id]
         self.assertEqual(ids, expected)
 
+    def test_active_space_ban_removes_space_source_from_following_feed(self):
+        SpaceBan.objects.create(
+            space=self.space,
+            profile=self.viewer,
+            imposed_by_subject="identity:moderator",
+        )
+        ids = list(following_feed_for(self.viewer).values_list("id", flat=True))
+
+        self.assertIn(self.followed_post.id, ids)
+        self.assertIn(self.own_post.id, ids)
+        self.assertNotIn(self.space_post.id, ids)
+
     def test_anonymous_caller_has_no_following_feed(self):
         self.assertFalse(following_feed_for(None).exists())
 
@@ -103,6 +115,15 @@ class FeedReadModelTests(TestCase):
         self.assertIn(self.own_post.id, ids)
         self.assertNotIn(self.muted_post.id, ids)
         self.assertNotIn(self.blocked_post.id, ids)
+
+    def test_active_space_ban_applies_to_chronological_feed(self):
+        SpaceBan.objects.create(
+            space=self.space,
+            profile=self.viewer,
+            imposed_by_subject="identity:moderator",
+        )
+        ids = list(chronological_feed_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.space_post.id, ids)
 
     def test_anonymous_chronological_feed_is_public_only(self):
         ids = set(chronological_feed_for(None).values_list("id", flat=True))
