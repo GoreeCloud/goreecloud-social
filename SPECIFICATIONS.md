@@ -38,13 +38,17 @@ The native Development foundation implements the following domain primitives:
 - `Follow`: directional social relationship with a request/accepted state and a no-self-follow invariant;
 - `Block`: bilateral read-safety relationship from a blocking profile to a blocked profile, with uniqueness and no-self-block invariants;
 - `Mute`: viewer-selected read-safety relationship from a muting profile to a muted profile, with uniqueness and no-self-mute invariants;
-- `Post`: author, optional space, content type, audience, reply policy, moderation state, body, and timestamps;
+- `Post`: author, optional space, optional parent-reply relationship, content type, audience, reply policy, moderation state, body, and timestamps;
 - `MediaAttachment`: ordered photo, video, or GIF reference plus accessibility alternative text;
+- `Poll`: one single-choice poll definition attached to a poll-kind post;
+- `PollOption`: ordered poll option with unique position inside its poll;
+- `PollVote`: one selected option per voter/poll, with application validation that the option belongs to the poll;
 - `Reaction`: one typed reaction from a profile to a post;
+- `Bookmark`: a private profile/post relationship with one bookmark per profile/post;
 - `Repost`: a repost or quote-repost relationship;
 - `PostReport`: a user report record for later moderation workflows.
 
-The current code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior.
+The current code intentionally stores media references rather than implementing production upload, scanning, transcoding, object storage, or CDN behavior. Reply, poll, and bookmark records are Development domain groundwork only and are not public mutation APIs.
 
 ## 4. Audience and social graph
 
@@ -114,13 +118,19 @@ The intended media pipeline includes:
 
 Production media processing, object storage, CDN behavior, and transcoding are not implemented in the current foundation.
 
-## 8. Reactions, reposts, and interaction
+## 8. Reactions, replies, polls, bookmarks, reposts, and interaction
 
-The interaction model should support ordinary likes as well as a bounded set of reactions such as love, laugh, wow, sad, angry, and support. The available set may later become context-sensitive by space policy, but reactions must remain interoperable and exportable.
+The interaction model supports ordinary likes as well as a bounded set of reactions such as love, laugh, wow, sad, angry, and support. The available set may later become context-sensitive by space policy, but reactions must remain interoperable and exportable.
 
-Reposts and quote-posts should preserve the relationship to the original content and its current accessibility. Reposting must not create a permanent bypass around later deletion, privacy restriction, moderation removal, or audience changes.
+Replies are represented as posts with an explicit parent relationship. Development validation prevents self-replies and prevents a reply from changing the parent post's space scope. This is structural groundwork only; authenticated reply creation must later enforce the parent's current visibility, reply policy, block/mute state, community rules, Identity authority, Wardveil protections, and Privacy Shield requirements.
 
-Replies, mentions, hashtags, bookmarks, polls, and sharing are planned but not yet implemented by the Development server API.
+Bookmarks are private profile-owned post relationships with a uniqueness constraint per profile/post. They are not a public engagement signal by default. The current source does not expose bookmark mutation or listing APIs.
+
+Single-choice poll groundwork consists of one `Poll` per poll-kind post, ordered `PollOption` records, and `PollVote` records constrained to one vote per voter/poll. Model validation rejects a poll attached to a non-poll post and rejects a vote whose option belongs to another poll. Public poll creation/voting APIs, close-time enforcement, results visibility, minimum-option validation at creation time, and any later multiple-choice extension remain planned.
+
+Reposts and quote-posts preserve the relationship to the original content and its current accessibility. Reposting must not create a permanent bypass around later deletion, privacy restriction, moderation removal, or audience changes.
+
+Structured mentions, hashtags, authenticated sharing, and public reply/bookmark/poll workflows remain planned. None of the new Development domain records create unauthenticated write endpoints.
 
 ## 9. Trust, safety, and moderation
 
@@ -145,7 +155,7 @@ GoreeCloud Identity is the authority for authentication, sessions, trusted devic
 
 GoreeCloud Social must not create a second authoritative credential store. The Social database may own application-specific profile information and social relationships, but the `identity_subject` field is a reference to the external authoritative identity.
 
-Future integration must define scopes for profile management, publishing, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs and personalized feed APIs must remain unavailable until an accepted authority model exists.
+Future integration must define scopes for profile management, publishing, replies, reactions, polls, bookmarks, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs and personalized feed APIs must remain unavailable until an accepted authority model exists.
 
 ## 11. Privacy Shield integration
 
@@ -159,7 +169,7 @@ The current foundation performs no contact ingestion, behavioral profiling, loca
 
 Wardveil Security must protect account/session operations, privileged moderation, API use, automation, uploads, malicious links/files, service communication, and security-sensitive administration.
 
-The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write and personalized-feed routes. Relationship-safety and feed state are currently exercised through internal domain/query services only. This is local Development hardening and read-model groundwork; it is not Wardveil integration or acceptance.
+The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write and personalized-feed routes. Relationship-safety, feed, threaded-reply, bookmark, and poll state are currently exercised through internal domain/query services only. This is local Development hardening and domain groundwork; it is not Wardveil integration or acceptance.
 
 ## 13. GoreeCloud Mesh integration
 
@@ -177,7 +187,7 @@ No Mesh runtime integration is implemented by the current foundation.
 
 ## 14. Everkeep continuity
 
-Important social configuration, posts, permitted media, relationships, groups/communities, moderation records, and required application state need defined backup, restore, migration, and export behavior.
+Important social configuration, posts, permitted media, thread relationships, user-owned bookmarks, poll structure and permitted vote state, other relationships, groups/communities, moderation records, and required application state need defined backup, restore, migration, and export behavior.
 
 Continuity must respect Privacy Shield retention and deletion. A deleted post must not silently become permanently retained merely because backup exists. Recovery must preserve Identity and Wardveil protection rather than becoming an alternate authorization path.
 
@@ -205,7 +215,7 @@ The initial API version is `v1`. The implemented HTTP routes remain intentionall
 - `/readyz/` — database-aware readiness;
 - `/api/v1/status/` — bounded product and Development capability status.
 
-Following and Chronological are internal query services in this milestone, not HTTP feed APIs.
+Following and Chronological are internal query services, not HTTP feed APIs. Threaded replies, bookmarks, polls, and poll votes are internal domain records, not mutation APIs.
 
 Future APIs must use scoped authorization, versioned contracts, request identifiers, bounded pagination, validation, idempotency where appropriate, rate controls, documented errors, and explicit privacy behavior.
 
@@ -241,13 +251,22 @@ Milestone 1 relationship-safety groundwork added:
 - regression coverage for public, follower, mutual, space, and private-to-self visibility behavior under block/mute relationships;
 - Development capability/status and documentation updates without opening unauthenticated mutation APIs.
 
-Milestone 2 feed-read groundwork adds:
+Milestone 2 feed-read groundwork added:
 
 - an internal `chronological_feed_for` query service that returns eligible posts in reverse chronological order;
 - an internal `following_feed_for` query service limited to the viewer, accepted follows, and accepted joined spaces;
 - composition on the existing visibility boundary so feed reads inherit audience, moderation, bilateral block, and viewer-selected mute enforcement;
 - regression tests for feed source selection, safety filtering, anonymous behavior, and chronological ordering;
 - Development version and source-status updates without exposing a personalized public feed API.
+
+Milestone 3 content-interaction groundwork adds:
+
+- explicit parent-reply relationships on posts with self-reply and cross-space validation;
+- a `poll` post kind plus `Poll`, ordered `PollOption`, and single-choice `PollVote` records;
+- one-vote-per-profile/poll uniqueness and option-to-poll validation;
+- private `Bookmark` records with profile/post uniqueness;
+- migration `0003_content_interactions` and regression coverage for the new invariants;
+- Development version and source-status updates without opening public reply, bookmark, poll, or vote mutation APIs.
 
 These milestones are Development source only. They do not establish public availability, Stable qualification, production safety, platform-system acceptance, or production readiness.
 
@@ -258,7 +277,7 @@ Subsequent milestones should prioritize, in order:
 1. accepted GoreeCloud Identity authentication and scoped authorization;
 2. Privacy Shield data-category, purpose, retention, recommendation, disclosure, and deletion contracts;
 3. Wardveil API, session, upload, abuse, and privileged-action protections;
-4. authorized publishing/reply/reaction/repost APIs with concurrency and idempotency controls;
+4. authorized publishing/reply/reaction/repost/bookmark/poll APIs with concurrency and idempotency controls;
 5. production media upload, processing, storage, export, and deletion architecture;
 6. richer moderation workflows, restrictions, community bans, rate controls, anti-spam, appeals, and evidence;
 7. authenticated, paginated Following/Chronological feed APIs and client surfaces using the validated read models;

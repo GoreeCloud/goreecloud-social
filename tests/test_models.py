@@ -2,7 +2,19 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from social.models import Block, Follow, Mute, Post, Reaction, SocialProfile
+from social.models import (
+    Block,
+    Bookmark,
+    Follow,
+    Mute,
+    Poll,
+    PollOption,
+    PollVote,
+    Post,
+    Reaction,
+    SocialProfile,
+    Space,
+)
 
 
 class ModelConstraintTests(TestCase):
@@ -48,3 +60,58 @@ class ModelConstraintTests(TestCase):
         post = Post(author=self.a, audience=Post.Audience.SPACE, body="scoped")
         with self.assertRaises(ValidationError):
             post.full_clean()
+
+    def test_reply_cannot_target_itself(self):
+        post = Post.objects.create(author=self.a, body="root")
+        post.reply_to = post
+        with self.assertRaises(ValidationError):
+            post.full_clean()
+
+    def test_reply_must_remain_in_parent_space_scope(self):
+        first = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="first-space", name="First", owner=self.a)
+        second = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="second-space", name="Second", owner=self.a)
+        parent = Post.objects.create(author=self.a, space=first, body="parent", audience=Post.Audience.SPACE)
+        reply = Post(author=self.b, space=second, reply_to=parent, body="reply", audience=Post.Audience.SPACE)
+        with self.assertRaises(ValidationError):
+            reply.full_clean()
+
+    def test_bookmark_relationship_is_unique(self):
+        post = Post.objects.create(author=self.b, body="bookmark me")
+        Bookmark.objects.create(profile=self.a, post=post)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Bookmark.objects.create(profile=self.a, post=post)
+
+    def test_poll_requires_poll_content_kind(self):
+        post = Post.objects.create(author=self.a, body="not a poll")
+        poll = Poll(post=post, question="Choose one")
+        with self.assertRaises(ValidationError):
+            poll.full_clean()
+
+    def test_poll_option_position_is_unique_within_poll(self):
+        post = Post.objects.create(author=self.a, content_kind=Post.ContentKind.POLL)
+        poll = Poll.objects.create(post=post, question="Choose one")
+        PollOption.objects.create(poll=poll, text="One", position=0)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                PollOption.objects.create(poll=poll, text="Two", position=0)
+
+    def test_single_choice_poll_allows_one_vote_per_voter(self):
+        post = Post.objects.create(author=self.a, content_kind=Post.ContentKind.POLL)
+        poll = Poll.objects.create(post=post, question="Choose one")
+        first = PollOption.objects.create(poll=poll, text="One", position=0)
+        second = PollOption.objects.create(poll=poll, text="Two", position=1)
+        PollVote.objects.create(poll=poll, option=first, voter=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                PollVote.objects.create(poll=poll, option=second, voter=self.b)
+
+    def test_poll_vote_option_must_belong_to_selected_poll(self):
+        first_post = Post.objects.create(author=self.a, content_kind=Post.ContentKind.POLL)
+        second_post = Post.objects.create(author=self.a, content_kind=Post.ContentKind.POLL)
+        first_poll = Poll.objects.create(post=first_post, question="First")
+        second_poll = Poll.objects.create(post=second_post, question="Second")
+        wrong_option = PollOption.objects.create(poll=second_poll, text="Wrong", position=0)
+        vote = PollVote(poll=first_poll, option=wrong_option, voter=self.b)
+        with self.assertRaises(ValidationError):
+            vote.full_clean()
