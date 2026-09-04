@@ -60,23 +60,27 @@ The foundation implements read-side visibility semantics for:
 
 An author can always retrieve their own visible-state posts through the application visibility service. Removed, limited, and pending-moderation states are excluded from ordinary visibility queries.
 
-For an identified viewer, ordinary read visibility now also excludes posts whose author is blocked by the viewer, posts whose author has blocked the viewer, and posts whose author is muted by the viewer. Blocking therefore acts bilaterally at this read boundary, while muting is viewer-selected. These relationships are enforced server-side in the visibility service rather than treated as cosmetic client filtering.
+For an identified viewer, ordinary read visibility also excludes posts whose author is blocked by the viewer, posts whose author has blocked the viewer, and posts whose author is muted by the viewer. Blocking therefore acts bilaterally at this read boundary, while muting is viewer-selected. These relationships are enforced server-side in the visibility service rather than treated as cosmetic client filtering.
 
 Future custom audiences, account restrictions, age policy, legal restrictions, community bans, and Privacy Shield controls must be composed into the authoritative visibility decision rather than applied as cosmetic client-side filtering.
 
 ## 5. Feeds and discovery
 
-GoreeCloud Social should eventually provide distinct user-selectable feed modes rather than hiding all behavior behind one opaque ranking system.
+GoreeCloud Social should provide distinct user-selectable feed modes rather than hiding all behavior behind one opaque ranking system.
 
-Planned feed families include:
+Feed families include:
 
-- Following — content from followed profiles and joined spaces;
-- Chronological — time-ordered eligible content with minimal ranking;
+- Following — content from accepted followed profiles, joined spaces, and the viewer's own eligible posts;
+- Chronological — time-ordered eligible content with no recommendation ranking;
 - Discover / For You — recommendation-driven discovery with user-understandable controls;
 - Communities and Groups — scoped social spaces;
 - Video — immersive short-form video plus a Following video mode;
 - Media — optional photo/video browsing surfaces;
 - Trending — only if a privacy-preserving and abuse-resistant definition is established.
+
+The Development source implements internal Following and Chronological query read models. Both compose on top of the authoritative visibility service so audience, moderation, bilateral block, and viewer-selected mute behavior is not duplicated or bypassed. The Following read model admits the viewer's own eligible posts, eligible posts from accepted follows, and eligible posts in spaces where the viewer has accepted membership. Anonymous callers have no personalized Following feed. Chronological uses the same eligibility boundary and returns eligible posts in reverse chronological order.
+
+These query services are not public personalized feed endpoints and do not establish production feed delivery, authenticated pagination, client synchronization, or Stable behavior. Public personalized feed APIs remain blocked until GoreeCloud Identity authorization, Privacy Shield policy, Wardveil protections, API pagination/compatibility requirements, and abuse/resource controls are accepted for the interface.
 
 Recommendation systems must expose enough information for users to understand why material is shown, reduce topics or signals, reset recommendations, and choose less-personalized or chronological behavior where supported. Engagement collection must not automatically become unrestricted profiling.
 
@@ -133,7 +137,7 @@ A combined social platform requires safety architecture from the beginning. Requ
 - age-appropriate behavior where required by the supported deployment and user population;
 - auditability for privileged moderation actions.
 
-The Development foundation now implements report, block, and mute data primitives plus block/mute enforcement in ordinary read visibility. It does not expose public mutation APIs for those relationships and does not claim production abuse detection, restriction workflows, community-ban enforcement, appeals, anti-spam, or mature moderation operations.
+The Development foundation implements report, block, and mute data primitives plus block/mute enforcement in ordinary read visibility. It does not expose public mutation APIs for those relationships and does not claim production abuse detection, restriction workflows, community-ban enforcement, appeals, anti-spam, or mature moderation operations.
 
 ## 10. GoreeCloud Identity integration
 
@@ -141,7 +145,7 @@ GoreeCloud Identity is the authority for authentication, sessions, trusted devic
 
 GoreeCloud Social must not create a second authoritative credential store. The Social database may own application-specific profile information and social relationships, but the `identity_subject` field is a reference to the external authoritative identity.
 
-Future integration must define scopes for profile management, publishing, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs must remain unavailable until an accepted authority model exists.
+Future integration must define scopes for profile management, publishing, moderation, group/community administration, automation, service identities, and delegated moderation. Public write APIs and personalized feed APIs must remain unavailable until an accepted authority model exists.
 
 ## 11. Privacy Shield integration
 
@@ -155,7 +159,7 @@ The current foundation performs no contact ingestion, behavioral profiling, loca
 
 Wardveil Security must protect account/session operations, privileged moderation, API use, automation, uploads, malicious links/files, service communication, and security-sensitive administration.
 
-The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write routes. Relationship-safety state is currently exercised through the internal domain model and read service only. This is local Development hardening and safety groundwork; it is not Wardveil integration or acceptance.
+The Development server uses bounded read-only health/status routes and deliberately avoids unauthenticated social write and personalized-feed routes. Relationship-safety and feed state are currently exercised through internal domain/query services only. This is local Development hardening and read-model groundwork; it is not Wardveil integration or acceptance.
 
 ## 13. GoreeCloud Mesh integration
 
@@ -195,11 +199,13 @@ Primary mobile navigation is intended to center on Home, Discover, Create, Commu
 
 ## 17. API and service boundaries
 
-The initial API version is `v1`. The implemented routes remain intentionally read-only:
+The initial API version is `v1`. The implemented HTTP routes remain intentionally bounded and read-only:
 
 - `/livez/` — process liveness;
 - `/readyz/` — database-aware readiness;
 - `/api/v1/status/` — bounded product and Development capability status.
+
+Following and Chronological are internal query services in this milestone, not HTTP feed APIs.
 
 Future APIs must use scoped authorization, versioned contracts, request identifiers, bounded pagination, validation, idempotency where appropriate, rate controls, documented errors, and explicit privacy behavior.
 
@@ -227,13 +233,21 @@ Milestone 0 established the smallest useful native foundation:
 - tests and continuous integration;
 - explicit documentation of security, privacy, continuity, and platform-integration blockers.
 
-Milestone 1 relationship-safety groundwork adds:
+Milestone 1 relationship-safety groundwork added:
 
 - `Block` and `Mute` domain records with database uniqueness and self-target prevention;
 - bilateral block enforcement in ordinary server-side read visibility;
 - viewer-selected mute enforcement in ordinary server-side read visibility;
 - regression coverage for public, follower, mutual, space, and private-to-self visibility behavior under block/mute relationships;
 - Development capability/status and documentation updates without opening unauthenticated mutation APIs.
+
+Milestone 2 feed-read groundwork adds:
+
+- an internal `chronological_feed_for` query service that returns eligible posts in reverse chronological order;
+- an internal `following_feed_for` query service limited to the viewer, accepted follows, and accepted joined spaces;
+- composition on the existing visibility boundary so feed reads inherit audience, moderation, bilateral block, and viewer-selected mute enforcement;
+- regression tests for feed source selection, safety filtering, anonymous behavior, and chronological ordering;
+- Development version and source-status updates without exposing a personalized public feed API.
 
 These milestones are Development source only. They do not establish public availability, Stable qualification, production safety, platform-system acceptance, or production readiness.
 
@@ -247,7 +261,7 @@ Subsequent milestones should prioritize, in order:
 4. authorized publishing/reply/reaction/repost APIs with concurrency and idempotency controls;
 5. production media upload, processing, storage, export, and deletion architecture;
 6. richer moderation workflows, restrictions, community bans, rate controls, anti-spam, appeals, and evidence;
-7. Following/chronological feeds before opaque recommendation ranking;
+7. authenticated, paginated Following/Chronological feed APIs and client surfaces using the validated read models;
 8. controlled Discover/Video recommendation systems with user-facing transparency controls;
 9. Mesh notifications, Messenger sharing, Contacts discovery, Universal Search, and events;
 10. Everkeep backup/restore/export acceptance and production deployment qualification;
