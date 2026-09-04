@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from social.models import Follow, Post, Reaction, SocialProfile
+from social.models import Block, Follow, Mute, Post, Reaction, SocialProfile
 
 
 class ModelConstraintTests(TestCase):
@@ -14,6 +14,28 @@ class ModelConstraintTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Follow.objects.create(follower=self.a, followed=self.a, state=Follow.State.ACCEPTED)
+
+    def test_block_cannot_target_self(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Block.objects.create(blocker=self.a, blocked=self.a)
+
+    def test_mute_cannot_target_self(self):
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Mute.objects.create(muter=self.a, muted=self.a)
+
+    def test_block_relationship_is_unique(self):
+        Block.objects.create(blocker=self.a, blocked=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Block.objects.create(blocker=self.a, blocked=self.b)
+
+    def test_mute_relationship_is_unique(self):
+        Mute.objects.create(muter=self.a, muted=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Mute.objects.create(muter=self.a, muted=self.b)
 
     def test_one_reaction_per_profile_per_post(self):
         post = Post.objects.create(author=self.b, body="hello")
