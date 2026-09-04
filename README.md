@@ -84,4 +84,4 @@ This repository carries a schema-version `0.2` `goreecloud.platform.yaml` declar
 
 ## License
 
-The intended license for this original network application is GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). The complete canonical license file must be present before this foundation is eligible to merge.
+GoreeCloud Social is licensed under the GNU Affero General Public License v3.0 only (`AGPL-3.0-only`). See [LICENSE](LICENSE) for the complete license text.
