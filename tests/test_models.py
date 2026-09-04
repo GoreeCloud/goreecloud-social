@@ -11,9 +11,15 @@ from social.models import (
     PollOption,
     PollVote,
     Post,
+    ProfileCollection,
+    ProfileCollectionMember,
     Reaction,
     SocialProfile,
     Space,
+    SpaceInvitation,
+    SpaceJoinRequest,
+    SpaceMembership,
+    SpaceRule,
 )
 
 
@@ -48,6 +54,65 @@ class ModelConstraintTests(TestCase):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 Mute.objects.create(muter=self.a, muted=self.b)
+
+    def test_profile_collection_name_is_unique_per_owner_and_kind(self):
+        ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.LIST, name="Close friends")
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.LIST, name="Close friends")
+
+    def test_profile_collection_name_can_repeat_across_collection_kinds(self):
+        ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.LIST, name="Close friends")
+        circle = ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.CIRCLE, name="Close friends")
+        self.assertEqual(circle.kind, ProfileCollection.Kind.CIRCLE)
+
+    def test_profile_collection_member_is_unique(self):
+        collection = ProfileCollection.objects.create(owner=self.a, kind=ProfileCollection.Kind.CIRCLE, name="Family")
+        ProfileCollectionMember.objects.create(collection=collection, profile=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                ProfileCollectionMember.objects.create(collection=collection, profile=self.b)
+
+    def test_space_rule_position_is_unique_within_space(self):
+        space = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="rules-space", name="Rules", owner=self.a)
+        SpaceRule.objects.create(space=space, title="Be kind", position=0)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SpaceRule.objects.create(space=space, title="Stay on topic", position=0)
+
+    def test_space_invitation_cannot_target_inviter(self):
+        space = Space.objects.create(kind=Space.Kind.GROUP, slug="invite-self", name="Invite Self", owner=self.a)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SpaceInvitation.objects.create(space=space, inviter=self.a, invitee=self.a)
+
+    def test_space_invitation_is_unique_per_space_and_invitee(self):
+        space = Space.objects.create(kind=Space.Kind.GROUP, slug="invite-unique", name="Invite Unique", owner=self.a)
+        SpaceInvitation.objects.create(space=space, inviter=self.a, invitee=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SpaceInvitation.objects.create(space=space, inviter=self.a, invitee=self.b)
+
+    def test_space_invitation_rejects_accepted_member(self):
+        space = Space.objects.create(kind=Space.Kind.GROUP, slug="invite-member", name="Invite Member", owner=self.a)
+        SpaceMembership.objects.create(space=space, profile=self.b, state=SpaceMembership.State.ACCEPTED)
+        invitation = SpaceInvitation(space=space, inviter=self.a, invitee=self.b)
+        with self.assertRaises(ValidationError):
+            invitation.full_clean()
+
+    def test_space_join_request_is_unique_per_space_and_requester(self):
+        space = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="request-unique", name="Request Unique", owner=self.a)
+        SpaceJoinRequest.objects.create(space=space, requester=self.b)
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                SpaceJoinRequest.objects.create(space=space, requester=self.b)
+
+    def test_space_join_request_rejects_accepted_member(self):
+        space = Space.objects.create(kind=Space.Kind.COMMUNITY, slug="request-member", name="Request Member", owner=self.a)
+        SpaceMembership.objects.create(space=space, profile=self.b, state=SpaceMembership.State.ACCEPTED)
+        request = SpaceJoinRequest(space=space, requester=self.b)
+        with self.assertRaises(ValidationError):
+            request.full_clean()
 
     def test_one_reaction_per_profile_per_post(self):
         post = Post.objects.create(author=self.b, body="hello")
