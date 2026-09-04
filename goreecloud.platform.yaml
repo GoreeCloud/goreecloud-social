@@ -7,7 +7,7 @@ component:
   repository: GoreeCloud/goreecloud-social
 
 lifecycle: development
-version: 0.1.0-dev.1
+version: 0.1.0-dev.2
 
 supported_platforms:
   - linux
@@ -124,5 +124,5 @@ conformance:
     - GoreeCloud Manager integration and acceptance are incomplete.
     - Glaze UI 1.1.0 application-specific rendered and accessibility acceptance is incomplete.
     - Production media upload, scanning, transcoding, object storage, delivery, and deletion are incomplete.
-    - Authorized write APIs, replies, blocking, muting, mature moderation, anti-spam, recommendation ranking, search, realtime delivery, notifications, and live media are incomplete.
+    - Authorized write APIs, replies, mature moderation operations, anti-spam, recommendation ranking, search, realtime delivery, notifications, and live media are incomplete.
     - Production database, secret management, reverse-proxy and TLS deployment, scaling, observability, rollback, and target-environment acceptance are incomplete.

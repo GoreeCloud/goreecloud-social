@@ -12,8 +12,9 @@ The initial native foundation establishes:
 - liveness, database-aware readiness, and bounded product-status endpoints;
 - GoreeCloud Social profile metadata that references an external GoreeCloud Identity subject instead of creating a second password or authentication store;
 - groups and communities with membership and role primitives;
-- follow relationships, posts, media references, reactions, reposts, and report records;
+- follow relationships, block and mute relationships, posts, media references, reactions, reposts, and report records;
 - audience-aware post visibility for public, followers, mutual relationships, spaces, and private-to-self content;
+- ordinary read visibility that enforces bilateral blocks and viewer-selected mutes;
 - a responsive Glaze-oriented development shell for Home, Discover, Video, Communities, and Profile surfaces without claiming Glaze UI acceptance;
 - repository documentation, tests, CI, and a Platform Contract v0.2 declaration that truthfully records unfinished platform integrations.
 
