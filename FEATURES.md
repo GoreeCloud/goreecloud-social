@@ -7,6 +7,9 @@
 - Membership roles and states.
 - Directional follow relationships with a no-self-follow database constraint.
 - Bilateral block relationships and viewer-selected mute relationships with uniqueness and no-self-target constraints.
+- Owner-curated List and Circle collection records plus unique profile membership per collection.
+- Explicit space invitation and join-request records with lifecycle states and accepted-member validation groundwork.
+- Ordered active/inactive space-rule records with unique positions within each space.
 - Posts with typed content, audiences, reply policy, moderation state, optional space scope, and an explicit parent-reply relationship.
 - Ordered media references for photos, video, and GIF content.
 - Single-choice poll records, ordered poll options, and one-vote-per-profile poll-vote groundwork.
@@ -27,8 +30,8 @@
 - Photo galleries, albums, short-form video, full video, captions, subtitles, thumbnails, and transcoding.
 - Public feed APIs and client surfaces for Following and Chronological, plus Discover/For You, Communities, Groups, Video, media, and optional Trending experiences.
 - Recommendation transparency, topic/signal controls, reset controls, and less-personalized feed options.
-- Public/private profiles, mutual relationships, lists/circles, invitations, and richer profile surfaces.
-- Full group/community rules, moderator teams, queues, member approvals, bans, announcements, and pinned content.
+- Authenticated private-profile follow-request workflows, list/circle management and custom-audience APIs, and richer profile surfaces.
+- Full group/community invitation and join-request workflows, role-capability authorization, ownership transfer, moderator teams, queues, member approvals, bans, announcements, pinned content, and rule-acknowledgement behavior.
 - Restrict controls, anti-spam, rate controls, impersonation protection, appeals, richer block/mute workflows, and moderation evidence.
 - Notifications, GoreeCloud Messenger sharing, Universal Search, and authorized Contacts discovery through GoreeCloud Mesh.
 - Everkeep backup/restore, portable export, migration, and account-transition support.
