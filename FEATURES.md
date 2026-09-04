@@ -7,6 +7,7 @@
 - Membership roles and states.
 - Directional follow relationships with a no-self-follow database constraint.
 - Bilateral block relationships and viewer-selected mute relationships with uniqueness and no-self-target constraints.
+- Directional restrict records with uniqueness and no-self-target constraints as internal safety-domain groundwork.
 - Owner-curated List and Circle collection records plus unique profile membership per collection.
 - Explicit space invitation and join-request records with lifecycle states and accepted-member validation groundwork.
 - Ordered active/inactive space-rule records with unique positions within each space.
@@ -14,9 +15,12 @@
 - Ordered media references for photos, video, and GIF content.
 - Single-choice poll records, ordered poll options, and one-vote-per-profile poll-vote groundwork.
 - Private bookmark relationships with one bookmark per profile/post.
-- Reactions, reposts/quote text, and post-report primitives.
+- Reactions, reposts/quote text, post-report primitives, and profile-report primitives.
+- Space-ban records with active/revoked/expired lifecycle state and bounded actor references.
+- Moderation case, moderation action, and appeal records for internal Development workflow groundwork.
 - Audience-aware read visibility for public, followers, mutual relationships, spaces, and private-to-self content.
 - Ordinary read visibility that excludes authors blocked by the viewer, authors who have blocked the viewer, and authors muted by the viewer.
+- Active non-expired space-ban enforcement for protected space-audience reads and space-sourced Following feed content.
 - Internal Following and Chronological feed read models that compose on the authoritative visibility boundary instead of duplicating audience or relationship-safety rules.
 - Read-only liveness, readiness, and source-status endpoints.
 - Responsive Development interface shell.
@@ -32,7 +36,11 @@
 - Recommendation transparency, topic/signal controls, reset controls, and less-personalized feed options.
 - Authenticated private-profile follow-request workflows, list/circle management and custom-audience APIs, and richer profile surfaces.
 - Full group/community invitation and join-request workflows, role-capability authorization, ownership transfer, moderator teams, queues, member approvals, bans, announcements, pinned content, and rule-acknowledgement behavior.
-- Restrict controls, anti-spam, rate controls, impersonation protection, appeals, richer block/mute workflows, and moderation evidence.
+- Authenticated restrict, reporting, space-ban, moderation-case/action/appeal, block, and mute mutation workflows with accepted GoreeCloud Identity authorization.
+- Production anti-spam, rate/resource controls, bot and automation controls, scraping defenses, impersonation handling, appeals/review operations, and mature moderation evidence.
+- Wardveil-integrated malicious-link/file/media protection and privileged-action protection with current evidence; source-only safety records do not establish Wardveil acceptance.
+- Privacy Shield-approved moderation/report evidence purposes, access, retention, deletion, export, disclosure, and privacy-safe logging.
+- Age-appropriate controls only where required and approved, using minimized eligibility information rather than unnecessary raw age/identity data.
 - Notifications, GoreeCloud Messenger sharing, Universal Search, and authorized Contacts discovery through GoreeCloud Mesh.
 - Everkeep backup/restore, portable export, migration, and account-transition support.
 - Glaze UI 1.1.0 acceptance across responsive web and future dedicated clients.
