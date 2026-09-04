@@ -118,6 +118,7 @@ class Post(models.Model):
         VIDEO = "video", "Video"
         GIF = "gif", "GIF"
         LINK = "link", "Link"
+        POLL = "poll", "Poll"
 
     class Audience(models.TextChoices):
         PUBLIC = "public", "Public"
@@ -140,6 +141,13 @@ class Post(models.Model):
 
     author = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="posts")
     space = models.ForeignKey(Space, on_delete=models.CASCADE, null=True, blank=True, related_name="posts")
+    reply_to = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="replies",
+    )
     content_kind = models.CharField(max_length=16, choices=ContentKind.choices, default=ContentKind.TEXT)
     body = models.TextField(blank=True)
     audience = models.CharField(max_length=16, choices=Audience.choices, default=Audience.PUBLIC)
@@ -152,6 +160,11 @@ class Post(models.Model):
         super().clean()
         if self.audience == self.Audience.SPACE and self.space_id is None:
             raise ValidationError({"space": "A space-audience post must belong to a group or community."})
+        if self.reply_to_id is not None:
+            if self.pk is not None and self.reply_to_id == self.pk:
+                raise ValidationError({"reply_to": "A post cannot reply to itself."})
+            if self.reply_to.space_id != self.space_id:
+                raise ValidationError({"space": "A reply must remain in the same space scope as its parent post."})
 
     class Meta:
         ordering = ("-created_at", "-id")
@@ -174,6 +187,43 @@ class MediaAttachment(models.Model):
         constraints = [models.UniqueConstraint(fields=("post", "position"), name="social_unique_media_position")]
 
 
+class Poll(models.Model):
+    post = models.OneToOneField(Post, on_delete=models.CASCADE, related_name="poll")
+    question = models.CharField(max_length=280)
+    closes_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.post_id is not None and self.post.content_kind != Post.ContentKind.POLL:
+            raise ValidationError({"post": "A poll must belong to a post whose content kind is poll."})
+
+
+class PollOption(models.Model):
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="options")
+    text = models.CharField(max_length=160)
+    position = models.PositiveSmallIntegerField()
+
+    class Meta:
+        ordering = ("position", "id")
+        constraints = [models.UniqueConstraint(fields=("poll", "position"), name="social_unique_poll_option_position")]
+
+
+class PollVote(models.Model):
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE, related_name="votes")
+    option = models.ForeignKey(PollOption, on_delete=models.CASCADE, related_name="votes")
+    voter = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="poll_votes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self) -> None:
+        super().clean()
+        if self.poll_id is not None and self.option_id is not None and self.option.poll_id != self.poll_id:
+            raise ValidationError({"option": "A poll vote option must belong to the selected poll."})
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("poll", "voter"), name="social_unique_single_choice_poll_vote")]
+
+
 class Reaction(models.Model):
     class Kind(models.TextChoices):
         LIKE = "like", "Like"
@@ -191,6 +241,15 @@ class Reaction(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=("profile", "post"), name="social_unique_post_reaction")]
+
+
+class Bookmark(models.Model):
+    profile = models.ForeignKey(SocialProfile, on_delete=models.CASCADE, related_name="bookmarks")
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="bookmarked_by")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=("profile", "post"), name="social_unique_bookmark")]
 
 
 class Repost(models.Model):
