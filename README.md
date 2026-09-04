@@ -12,14 +12,15 @@ The native Development foundation establishes:
 - liveness, database-aware readiness, and bounded product-status endpoints;
 - GoreeCloud Social profile metadata that references an external GoreeCloud Identity subject instead of creating a second password or authentication store;
 - groups and communities with membership and role primitives;
-- follow relationships, block and mute relationships, posts, explicit reply-parent relationships, media references, single-choice poll groundwork, private bookmarks, reactions, reposts, and report records;
+- directional follows, bilateral blocks, viewer-selected mutes, owner-curated List/Circle collections, explicit space invitations and join requests, and ordered space rules as internal Social domain records;
+- posts, explicit reply-parent relationships, media references, single-choice poll groundwork, private bookmarks, reactions, reposts, and report records;
 - audience-aware post visibility for public, followers, mutual relationships, spaces, and private-to-self content;
 - ordinary read visibility that enforces bilateral blocks and viewer-selected mutes;
 - internal Following and Chronological feed read models that reuse the same visibility and relationship-safety boundary;
 - a responsive Glaze-oriented development shell for Home, Discover, Video, Communities, and Profile surfaces without claiming Glaze UI acceptance;
 - repository documentation, tests, CI, and a Platform Contract v0.2 declaration that truthfully records unfinished platform integrations.
 
-The reply, bookmark, poll, and feed foundations are internal Development domain/query capabilities only. They do not expose public mutation or personalized-feed endpoints and do not establish production thread authorization, poll policy, recommendation ranking, production feed delivery, authentication, or client synchronization.
+The collection, invitation, join-request, rule, reply, bookmark, poll, and feed foundations are internal Development domain/query capabilities only. They do not expose public mutation or personalized-feed endpoints and do not establish production role-capability authorization, invitation approval workflows, thread authorization, poll policy, recommendation ranking, production feed delivery, authentication, or client synchronization.
 
 This source does **not** yet provide production authentication, public social write APIs, public personalized feed APIs, production media upload/transcoding, recommendation ranking, notifications, live streaming, production moderation operations, production storage, mobile applications, production deployment, or accepted integrations with GoreeCloud Identity, Privacy Shield, Wardveil Security, Everkeep, GoreeCloud Mesh, GoreeCloud Manager, or Glaze UI.
 
@@ -50,7 +51,7 @@ Then open `http://127.0.0.1:8000/`.
 - `GET /readyz/` — database-aware readiness.
 - `GET /api/v1/status/` — bounded product, lifecycle, version, capability, and integration-status information.
 
-No content-creation, account-authentication, bookmark/poll/reply mutation, or personalized-feed API is exposed by this milestone. That boundary is intentional until GoreeCloud Identity authorization, Privacy Shield policy, Wardveil Security controls, and abuse protections are defined and implemented for those operations.
+No content-creation, account-authentication, profile-collection, space-invitation/join-request/rule, bookmark/poll/reply mutation, or personalized-feed API is exposed by this milestone. That boundary is intentional until GoreeCloud Identity authorization, Privacy Shield policy, Wardveil Security controls, API contracts, and abuse protections are defined and implemented for those operations.
 
 ## Validation
 
