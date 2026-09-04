@@ -19,7 +19,19 @@ def home(request):
     return render(request, "social/home.html", {
         "version": __version__,
         "feed_modes": ["Following", "Chronological", "Discover", "Communities", "Video"],
-        "social_primitives": ["Profiles", "Groups", "Communities", "Posts", "Photos", "Video", "GIFs", "Reactions", "Reposts"],
+        "social_primitives": [
+            "Profiles",
+            "Groups",
+            "Communities",
+            "Posts",
+            "Photos",
+            "Video",
+            "GIFs",
+            "Reactions",
+            "Reposts",
+            "Blocks",
+            "Mutes",
+        ],
     })
 
 
@@ -52,6 +64,7 @@ def service_status(request):
             "media-reference-domain",
             "reactions-and-reposts-domain",
             "audience-visibility-read-model",
+            "relationship-safety-read-enforcement",
         ],
         "platform_integrations": PLATFORM_INTEGRATIONS,
     })
