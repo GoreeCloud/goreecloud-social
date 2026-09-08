@@ -39,6 +39,12 @@ def home(request):
             "Reposts",
             "Blocks",
             "Mutes",
+            "Restrictions",
+            "Profile reports",
+            "Space bans",
+            "Moderation cases",
+            "Moderation actions",
+            "Appeals",
         ],
     })
 
@@ -76,6 +82,8 @@ def service_status(request):
             "following-and-chronological-feed-read-models",
             "threaded-replies-bookmarks-and-polls-domain",
             "social-collections-and-community-workflow-domain",
+            "trust-safety-domain-groundwork",
+            "active-space-ban-protected-read-enforcement",
         ],
         "platform_integrations": PLATFORM_INTEGRATIONS,
     })

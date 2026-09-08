@@ -1,6 +1,9 @@
-from django.test import TestCase
+from datetime import timedelta
 
-from social.models import Block, Follow, Mute, Post, SocialProfile, Space, SpaceMembership
+from django.test import TestCase
+from django.utils import timezone
+
+from social.models import Block, Follow, Mute, Post, SocialProfile, Space, SpaceBan, SpaceMembership
 from social.services import visible_posts_for
 
 
@@ -53,6 +56,36 @@ class VisibilityTests(TestCase):
         Block.objects.create(blocker=self.viewer, blocked=self.space_author)
         ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
         self.assertNotIn(self.space_post.id, ids)
+
+    def test_active_space_ban_hides_protected_space_post(self):
+        SpaceBan.objects.create(
+            space=self.space,
+            profile=self.viewer,
+            imposed_by_subject="identity:moderator",
+        )
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertNotIn(self.space_post.id, ids)
+        self.assertIn(self.public.id, ids)
+
+    def test_expired_space_ban_does_not_hide_protected_space_post(self):
+        SpaceBan.objects.create(
+            space=self.space,
+            profile=self.viewer,
+            imposed_by_subject="identity:moderator",
+            expires_at=timezone.now() - timedelta(minutes=1),
+        )
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertIn(self.space_post.id, ids)
+
+    def test_revoked_space_ban_does_not_hide_protected_space_post(self):
+        SpaceBan.objects.create(
+            space=self.space,
+            profile=self.viewer,
+            imposed_by_subject="identity:moderator",
+            state=SpaceBan.State.REVOKED,
+        )
+        ids = set(visible_posts_for(self.viewer).values_list("id", flat=True))
+        self.assertIn(self.space_post.id, ids)
 
     def test_safety_filters_do_not_hide_viewers_own_private_posts(self):
         Block.objects.create(blocker=self.viewer, blocked=self.other)
