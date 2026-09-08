@@ -224,7 +224,7 @@ The status endpoint provides bounded source identity for later management integr
 
 All user-facing Social surfaces must use the current Stable Glaze UI consumer baseline and pass application-specific visual, responsive, touch, keyboard, reduced-motion, contrast, text-scaling, screen-reader, and platform acceptance before Stable eligibility.
 
-The repository contains a responsive, accessible development shell that establishes information architecture only. It does not claim Glaze UI 1.1.0 conformance or acceptance.
+The repository contains a responsive, accessible development shell that establishes information architecture only. It does not claim Glaze UI 1.2.0 conformance or acceptance.
 
 Primary mobile navigation is intended to center on Home, Discover, Create, Communities, and Profile, with notification and Messenger access available through shared GoreeCloud surfaces. Larger displays may expand to a multi-column layout while preserving the same information architecture.
 
